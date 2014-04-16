@@ -1,0 +1,246 @@
+= Boxen: OSX Configuration Beyond Dotfiles
+Jim Moore @jdigger & Brian Street @itGumby
+:backend: deckjs
+:navigation:
+:deckjs_theme: neon
+:deckjs_transition: fade
+
+== Abstract
+“Infrastructure as code” is accepted for our servers, but why don’t we apply it to our desktops?  Boxen is a tool that enables not just automated installation of software, but also configuration of our desktops.  Boxen puts the developer in control of their desktop (as if they weren’t anyway) but also scales across companies, teams, and even home vs work computers.
+
+We will cover the basic ideas and tools involved, as well showing some of the things you can configure (hint: everything) for really pimping your machine and making upgrading your environment much faster and consistent WAAAY beyond dotfiles. We’ll also talk about our experiences in scaling this across the developers in our team.
+
+
+== Imposter Syndrome: Jim
+
+Jim Moore https://github.com/jdigger[jdigger]
+
+== Imposter Syndrome: Brian
+image::https://avatars3.githubusercontent.com/u/1299690?s=460[GitHub Avatar]
+
+Brian Street https://github.com/ItGumby[itGumby]
+
+* currently, a full stack web developer behind TWC's CMS
+* flexible generalist with a passion for automation
+* also: ETL, Databases, (Automated) QA, and Motion Control
+
+
+== Introduction: Summary
+
+Collectively, we work on a development team with more contractors than employees.
+
+We have had to "spin-up" quite a few people.
+
+We also had a batch of hot new laptops for some employees coming...
+
+== Why Boxen?
+
+[options="step"]
+* No more "follow the steps on the wiki at ..."
+* a tool meant for developers/power-users
+* install apps AND configure them
+* configure your dev environment
+* graceful iterative customizations
+
+== Features
+
+[.lead]
+*reinforce DevOps mantra "infrastructure is code"* +
+everything is versionable (thus rollbacks) and diff-able
+
+[options="step"]
+*How do you automate software isntallation on a Mac?* +
+and other limitations...
+
+[options="step"]
+* versioning
+* assume single user
+* assume a GUI
+
+== Features: sources/types
+[.lead]
+So many ways to install software. Boxen calls these *providers*.
+
+[options="step"]
+*homebrew* is the default provider
+
+[options="step"]
+Other providers:
+
+[options="step"]
+* git repos
+* *appdmg*  ~(if \*.dmg contains \*.app to drag into /Applications)~
+* *appdmg_eula*  ~(if \*.dmg asks for a license agreement when it is opened and contains \*.app to drag into /Applications)~
+* *pkgdmg*  ~(if \*.pkg contains installer )~
+* *compressed_app*  ~(if \*.zip to unzip & place into /Applications)~
+* gem, nvm, etc.
+* macports
+
+== Features: Out of the Box Software
+
+* brew
+* git
+* rbenv, versions of Ruby
+* nvm, versions of nodeJS
+* full disk encryption (opt-out on bootstrap)
+
+== Getting Started
+
+. https://boxen.github.com/[boxen-web]
+. the bootstrap
+. Customize & iterate
+** edit
+** re-run `boxen`
+
+== Requirements
+
+[options="step"]
+* Mac OSX10.8+ only for now.
+** The project wants pull-requests for other platforms _that puppet is on_
+* XCode CLI required
+* ssh keys created, uploaded to GH/repos
+* accessible source url _(ie JDK’s register per download)_
+* confusion: GH user vs GHE user
+
+== Terms
+
+=== Puppet Terms
+* Manifest
+* Module
+* Package (Provider)
+* Facts (Facter)
+* Librarian
+* Hiera
+* [strike]#Profiles & Roles# (not covered here)
+
+=== Boxen Terms
+* User
+* Project ~can depend on other projects as pseudo heirarchy~
+
+== Packages
+[.lead]
+Packages are the "workhorse" of boxen
+
+```ruby
+package { ‘PackageName’:    ## meaningful to you
+    ensure => ___,          ## [installed, present, link, directory, stopped]
+    source => user/repo,    ## or http://..., git@...
+    provider => ___,        ## defaults to homebrew
+    require => [...],       ## list of packages, files, etc that have to be installed before this package
+}
+```
+
+[options="step"]
+```ruby
+package {[        ## homebrew shortcut - list
+    ‘gradle’,
+    ‘groovy’,
+    ‘app3’,
+    …
+]:}
+```
+
+== Alternatives to Packages
+```ruby
+class {...} ## to configure
+```
+
+[options="step"]
+```ruby
+ruby::gem { “label”:
+    gem => ‘gem-name`,
+    ruby => 1.9.3,        ## gems have to install to a version of ruby
+    version => ‘~> 2.0`,  ## notation for at least
+}                         ## probably equivalent for node/npm
+```
+
+[options="step"]
+```ruby
+file { {path}:
+    ensure => present/link/directory,
+    target => {targetPath},    ## if link
+    require => [...],
+}
+```
+
+[options="step"]
+```ruby
+exec { “gjslint”:
+    command => “easy_install {url}”,
+    creates => {path},    ## test if this has already completed successfully
+}
+```
+
+== Brief Structure
+
+[options="step"]
+* `~/.boxen/config.json`
+* out of box:
+** `BOXEN_HOME=/opt/boxen`
+** `$BOXEN_HOME/bin/*`
+** `$BOXEN_HOME/config/**`
+* your changes
+** `REPO=$BOXEN_HOME/repo` _where you make changes_
+** `$REPO/Puppetfile` _puppet librarian_
+**** `mod, {module_name}, {version/tag}[, {source}]`
+**** https://github.com/boxen?query=puppet-[Search for Module Names]
+**** use repository *tag* to specify version
+** `$REPO/modules/people/manifests/{gh_user}.pp` _primary source_
+**** `include people::{gh_user}::applications`
+** `$REPO/modules/people/{gh_user}/applications.rb` _ruby class listed above_
+* Advanced
+** `$REPO/shared/lib/facter/boxen.rb` _discover some facts_ `$::github_name, $::boxen_user, etc`
+
+== Planning Customizations
+
+[.lead]Consider...
+
+* company
+* team
+* user
+* host
+* parameterize, facter facts
+
+[options="step"]
+* configure pLists
+* links, folders, etc
+* script execution
+
+== Use Case: private
+
+* dotfiles
+* tokens
+
+== Recommendations
+
+* organization
+** ghUser
+** people
+** modules
+** hiera
+* forking, branching
+* parameters, facts
+
+== Troubleshooting
+
+[options="step"]
+* http://stackoverflow.com/questions/22352838/ruby-gem-install-json-fails-on-mavericks-and-xcode-5-1-unknown-argument-mul[XCode 5.1]
+* debugging
+* upgrading packages
+* [strike]#upgrading boxen master#
+* uninstalling: `/opt/boxen/repo/script/nuke`
+
+== Resources
+
+* https://boxen.github.com/
+* http://www.dmuth.org/node/1431/tweaking-boxen-osx
+* http://garylarizza.com/blog/2013/02/15/puppet-plus-github-equals-laptop-love/
+* http://docs.puppetlabs.com/learning/
+* https://webconference.twcable.com/p7oudsr7jp4/ ?
+
+[options="step"]
+* https://octodex.github.com/ for my avatar
+
+== Thank You!
+
+Questions?
