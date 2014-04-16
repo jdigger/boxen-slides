@@ -2,7 +2,7 @@
 Jim Moore @jdigger & Brian Street @itGumby
 :backend: deckjs
 :navigation:
-:deckjs_theme: swiss
+:deckjs_theme: web-2.0
 :deckjs_transition: horizontal-slide
 
 == Abstract
@@ -44,7 +44,7 @@ We also had a batch of hot new laptops for some employees coming...
 
 == Features
 
-[.lead]
+[options="step"]
 *reinforce DevOps mantra "infrastructure is code"* +
 everything is versionable (thus rollbacks) and diff-able
 
@@ -58,8 +58,7 @@ and other limitations...
 * assume a GUI
 
 == Features: sources/types
-[.lead]
-So many ways to install software. Boxen calls these *providers*.
+[.lead]#So many ways to install software. Boxen calls these *providers*.#
 
 [options="step"]
 *homebrew* is the default provider
@@ -86,11 +85,17 @@ Other providers:
 
 == Getting Started
 
+[options="step"]
 . https://boxen.github.com/[boxen-web]
 . the bootstrap
+.. `sudo mkdir -p /opt/boxen`
+.. `sudo chown ${USER}:staff /opt/boxen`
+.. `git clone https://github.webapps.rr.com/bstreet/twc-boxen /opt/boxen/repo`
+.. `cd /opt/boxen/repo`
+.. `./script/boxen --no-fde`
 . Customize & iterate
-** edit
-** re-run `boxen`
+.. edit modules/packages/people/nodes
+.. re-run `boxen`
 
 == Requirements
 
@@ -118,8 +123,7 @@ Other providers:
 * Project ~can depend on other projects as pseudo heirarchy~
 
 == Packages
-[.lead]
-Packages are the "workhorse" of boxen
+[.lead]#Packages are the "workhorse" of boxen#
 
 ```ruby
 package { ‘PackageName’:    ## meaningful to you
@@ -193,7 +197,7 @@ exec { “gjslint”:
 
 == Planning Customizations
 
-[.lead]Consider...
+[.lead]#Consider...#
 
 * company
 * team
