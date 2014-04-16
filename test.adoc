@@ -1,0 +1,43 @@
+= Title of Presentation
+Presenter Name
+:backend: deckjs
+:navigation:
+:deckjs_theme: neon
+:deckjs_transition: fade
+
+== Title of Slide One
+
+This is the first slide after the title slide.
+
+[canvas-image="images/example.jpg"]
+== Slide Two's Title will not be displayed
+
+[role="canvas-caption", position="center-up"]
+This text is displayed on top of the example.jpg image.
+
+
+
+== Stepped paragraphs
+
+[options="step"]
+This paragraph is displayed first.
+
+[options="step"]
+Then this paragraph is displayed when the _Next_ arrow is clicked.
+
+== Stepped list items
+
+[options="step"]
+* A bullet is displayed each time the _Next_ arrow is clicked.
+* B
+* C
+
+== Stepped blocks
+
+[options="step"]
+
+Block one
+
+[options="step"]
+
+Block two
