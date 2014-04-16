@@ -2,8 +2,8 @@
 Jim Moore @jdigger & Brian Street @itGumby
 :backend: deckjs
 :navigation:
-:deckjs_theme: neon
-:deckjs_transition: fade
+:deckjs_theme: swiss
+:deckjs_transition: horizontal-slide
 
 == Abstract
 “Infrastructure as code” is accepted for our servers, but why don’t we apply it to our desktops?  Boxen is a tool that enables not just automated installation of software, but also configuration of our desktops.  Boxen puts the developer in control of their desktop (as if they weren’t anyway) but also scales across companies, teams, and even home vs work computers.
@@ -11,11 +11,11 @@ Jim Moore @jdigger & Brian Street @itGumby
 We will cover the basic ideas and tools involved, as well showing some of the things you can configure (hint: everything) for really pimping your machine and making upgrading your environment much faster and consistent WAAAY beyond dotfiles. We’ll also talk about our experiences in scaling this across the developers in our team.
 
 
-== Imposter Syndrome: Jim
+== Introducing Jim
 
 Jim Moore https://github.com/jdigger[jdigger]
 
-== Imposter Syndrome: Brian
+== Introducing Brian
 image::https://avatars3.githubusercontent.com/u/1299690?s=460[GitHub Avatar]
 
 Brian Street https://github.com/ItGumby[itGumby]
