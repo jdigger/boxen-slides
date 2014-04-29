@@ -23,12 +23,6 @@ describe('Deck JS Quick Go-To', function() {
       $.deck('showGoTo');
       expect($(defaults.selectors.gotoInput)[0]).toEqual(document.activeElement);
     });
-
-    it('should set aria-hidden to false', function() {
-      var $gotoForm = $(defaults.selectors.gotoForm);
-      $.deck('showGoTo');
-      expect($gotoForm).toHaveAttr('aria-hidden', 'false');
-    });
   });
 
   describe('hideGoTo()', function() {
@@ -43,12 +37,6 @@ describe('Deck JS Quick Go-To', function() {
 
     it('should blur the go-to input', function() {
       expect($(defaults.selectors.gotoInput)[0]).not.toEqual(document.activeElement);
-    });
-
-    it('should set aria-hidden to true', function() {
-      var $gotoForm = $(defaults.selectors.gotoForm);
-      $.deck('hideGoTo');
-      expect($gotoForm).toHaveAttr('aria-hidden', 'true');
     });
   });
 

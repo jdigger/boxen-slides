@@ -11,20 +11,9 @@ describe('Deck JS', function() {
       }
     });
 
-    describe('init(options.selectors.slides)', function() {
-      it('should create slides', function() {
-        $.deck({
-          selectors: {
-            slides: '.slide3'
-          }
-        });
-        expect($.deck('getSlides').length).toEqual($('.slide3').length);
-      });
-    });
-
     describe('init(selector)', function() {
       it('should create slides', function() {
-        $.deck();
+        $.deck('.slide');
         expect($.deck('getSlides').length).toEqual($('.slide').length);
       });
     });
@@ -44,7 +33,7 @@ describe('Deck JS', function() {
 
     describe('navigation functions', function() {
       beforeEach(function() {
-        $.deck();
+        $.deck('.slide');
       });
 
       describe('go(i)', function() {
@@ -66,36 +55,6 @@ describe('Deck JS', function() {
         it('should go nowhere if id does not exist', function() {
           $.deck('go', 'i-dont-exist');
           expect($.deck('getSlide')).toHaveClass('slide1');
-        });
-
-        describe('aria attribute updates', function() {
-          beforeEach(function() {
-            loadFixtures('nesteds.html');
-            $.deck();
-            $.deck('go', 5);
-          });
-
-          it('should set offscreen slides to hidden true', function() {
-            $([
-              '.toplevel.deck-before:not(.deck-child-current)',
-              '.toplevel.deck-previous:not(.deck-child-current)',
-              '.deck-next',
-              '.deck-after'
-            ].join(', ')).each(function() {
-              expect($(this)).toHaveAttr('aria-hidden', 'true');
-            });
-          });
-
-          it('should set onscreen slides to hidden false', function() {
-            $([
-              '.deck-child-current.slide',
-              '.deck-child-current .deck-before',
-              '.deck-child-current .deck-previous',
-              '.deck-current'
-            ].join(', ')).each(function() {
-              expect($(this)).toHaveAttr('aria-hidden', 'false');
-            });
-          });
         });
       });
 
@@ -128,7 +87,7 @@ describe('Deck JS', function() {
 
     describe('getters', function() {
       beforeEach(function() {
-        $.deck();
+        $.deck('.slide');
       });
 
       describe('getSlide()', function() {
@@ -176,38 +135,11 @@ describe('Deck JS', function() {
           expect($.deck('getOptions')).toEqual(defaults);
         });
       });
-
-      describe('getTopLevelSlides()', function() {
-        it('should return only root slides', function() {
-          loadFixtures('nesteds.html');
-          $.deck();
-          var expectation = [];
-          var topLevelSlides = $.deck('getTopLevelSlides');
-          $('.toplevel').each(function() {
-            expectation.push($(this));
-          });
-          expect(topLevelSlides).toEqual(expectation);
-        });
-      });
-
-      describe('getNestedSlides()', function() {
-        it('should return nested slides for current slide', function() {
-          loadFixtures('nesteds.html');
-          $.deck();
-          $.deck('go', 2);
-          var expectation = [];
-          var nestedSlides = $.deck('getNestedSlides');
-          $.deck('getSlide').find('.slide').each(function() {
-            expectation.push($(this));
-          });
-          expect(nestedSlides).toEqual(expectation);
-        });
-      });
     });
 
     describe('container states', function() {
       beforeEach(function() {
-        $.deck();
+        $.deck('.slide');
       });
 
       it('should start at state 0', function() {
@@ -310,43 +242,41 @@ describe('Deck JS', function() {
     });
 
     describe('events', function() {
-      var $d;
+      var $d = $(document);
 
       beforeEach(function() {
-        $d = $(document);
+        spyOnEvent($d, 'deck.init');
+        spyOnEvent($d, 'deck.beforeInit');
+        $.deck('.slide');
+        $.deck('go', 1);
+        spyOnEvent($d, 'deck.change');
       });
 
       describe('deck.change', function() {
-        var index, oldIndex;
-
-        beforeEach(function() {
-          $.deck();
-          $.deck('go', 1);
-          $d.one('deck.change', function(event, from, to) {
-            index = to;
-            oldIndex = from;
-          });
-        });
-
         it('should fire on go(i)', function() {
           $.deck('go', 3);
-          expect(index).toEqual(3);
+          expect('deck.change').toHaveBeenTriggeredOn($d);
         });
 
         it('should fire on next()', function() {
           $.deck('next');
-          expect(index).toEqual(2);
+          expect('deck.change').toHaveBeenTriggeredOn($d);
         });
 
         it('should fire on prev()', function() {
           $.deck('prev');
-          expect(index).toEqual(0);
+          expect('deck.change').toHaveBeenTriggeredOn($d);
         });
 
         it('should pass parameters with from and to indices', function() {
+          var f = function(e, from, to) {
+            expect(from).toEqual(1);
+            expect(to).toEqual(3);
+          };
+
+          $d.bind('deck.change', f);
           $.deck('go', 3);
-          expect(index).toEqual(3);
-          expect(oldIndex).toEqual(1);
+          $d.unbind('deck.change', f);
         });
 
         it('should not fire if default prevented in beforeChange', function() {
@@ -359,157 +289,34 @@ describe('Deck JS', function() {
 
       describe('deck.init', function() {
         it('should fire on deck initialization', function() {
-          $.deck();
-          expect($.deck('getSlides').length).toBeGreaterThan(0);
+          expect('deck.init').toHaveBeenTriggeredOn($d);
+        });
+
+        it('should have already populated the slides array', function() {
+          var f = function() {
+            expect($.deck('getSlides').length).toBeGreaterThan(0);
+          };
+
+          $d.bind('deck.init', f);
+          $.deck('.slide');
+          $d.unbind('deck.init', f);
         });
       });
 
       describe('deck.beforeInit', function() {
-        var beforeHit;
-
-        beforeEach(function() {
-          beforeHit = false;
-          $d.on('deck.beforeInit', function() {
-            beforeHit = true;
-          });
-        });
-
         it('should fire on deck initialization', function() {
-          $.deck();
-          expect(beforeHit).toBeTruthy();
+          expect('deck.beforeInit').toHaveBeenTriggeredOn($d);
         });
 
-        it('should have populated the slides array', function() {
+        it('should have not populated the slides array', function() {
           var f = function() {
-            expect($.deck('getSlides').length).toEqual($('.slide').length);
+            expect($.deck('getSlides').length).toEqual(0);
           };
 
           $d.bind('deck.beforeInit', f);
-          $.deck();
+          $.deck('.slide');
           $d.unbind('deck.beforeInit', f);
         });
-
-        it('should prevent the init event if lockInit is called', function() {
-          var initHit = false;
-          var f = function(event) {
-            event.lockInit();
-          };
-          var g = function() {
-            initHit = true;
-          };
-
-          $d.bind('deck.beforeInit', f);
-          $d.bind('deck.init', g);
-          $.deck();
-          $d.unbind('deck.beforeInit', f);
-          $d.unbind('deck.init', g);
-          expect(initHit).toBeFalsy();
-        });
-
-        it('should warn if locked without release', function() {
-          var warned = false;
-          var f = function(event) {
-            event.lockInit();
-          };
-          var warn = console.warn;
-          window.console.warn = function() {
-            warned = true;
-          };
-
-          $d.bind('deck.beforeInit', f);
-          $.deck('.slide', {
-            initLockTimeout: 20
-          });
-          $d.unbind('deck.beforeInit', f);
-
-          waitsFor(function() {
-            return warned;
-          }, 'warning', 2000);
-
-          runs(function() {
-            window.console.warn = warn;
-          });
-        });
-
-        it('should fire init event once releaseInit is called', function() {
-          var f = function(event) {
-            event.lockInit();
-            window.setTimeout(function() {
-              event.releaseInit();
-            }, 20);
-          };
-
-          runs(function() {
-            $d.bind('deck.beforeInit', f);
-            $.deck();
-            $d.unbind('deck.beforeInit', f);
-          });
-
-          waitsFor(function() {
-            return $.deck('getSlides').length > 0;
-          }, 'lock to release', 2000);
-        });
-      });
-    });
-
-    describe('hash/id assignments', function() {
-      beforeEach(function() {
-        $.deck('.slide');
-      });
-
-      it('should assign ids to slides that do not have them', function() {
-        var slides = $.deck('getSlides');
-        $.each(slides, function(i, $e) {
-          expect($e.attr('id')).toBeTruthy();
-        });
-      });
-
-      it('should reassign ids on reinitialization', function() {
-        var $firstSlide = $.deck('getSlide', 0);
-        var firstID = $firstSlide.attr('id');
-
-        $firstSlide.before('<div class="slide"></div>');
-        $.deck('.slide');
-        expect($firstSlide).not.toHaveId(firstID);
-      });
-
-      it('should update container with a state class including the slide id', function() {
-        var $c = $.deck('getContainer');
-        var osp = defaults.classes.onPrefix;
-
-        expect($c).toHaveClass(osp + $.deck('getSlide', 0).attr('id'));
-        $.deck('next');
-        expect($c).toHaveClass(osp + $.deck('getSlide', 1).attr('id'));
-        $.deck('next');
-        expect($c).not.toHaveClass(osp + $.deck('getSlide', 1).attr('id'));
-        expect($c).toHaveClass(osp + $.deck('getSlide', 2).attr('id'));
-      });
-
-      it('should use existing ids if they exist', function() {
-        expect($('#custom-id')).toExist();
-      });
-
-      it('should update the URL on slide change (if supported)', function() {
-        if (Modernizr.history) {
-          $.deck('go', 3);
-          expect(window.location.hash).toEqual('#slide-3');
-        }
-      });
-
-      it('should deep link to slide on deck init', function() {
-        window.location.hash = "#slide-3";
-        $.deck('.slide');
-        waitsFor(function() {
-          return $.deck('getSlide').attr('id') === 'slide-3';
-        });
-      });
-
-      it('should follow internal hash links using hashchange (if supported)', function() {
-        window.location.hash = "#slide-3";
-        // Hashchange event doesn't fire right when the hash changes?
-        waitsFor(function() {
-          return $.deck('getSlide').attr('id') === 'slide-3';
-        }, 'hash to change to slide-3', 2000);
       });
     });
   });
@@ -517,7 +324,7 @@ describe('Deck JS', function() {
   describe('empty deck', function() {
     beforeEach(function() {
       loadFixtures('empty.html');
-      $.deck();
+      $.deck('.slide');
     });
 
     describe('getSlide()', function() {

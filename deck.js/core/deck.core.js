@@ -1,6 +1,6 @@
 /*!
 Deck JS - deck.core
-Copyright (c) 2011-2014 Caleb Troughton
+Copyright (c) 2011-2013 Caleb Troughton
 Dual licensed under the MIT license.
 https://github.com/imakewebthings/deck.js/blob/master/MIT-license.txt
 */
@@ -15,7 +15,7 @@ slides.  More functionality is provided by wholly separate extension modules
 that use the API provided by core.
 */
 (function($, undefined) {
-  var slides, currentIndex, $container, $fragmentLinks;
+  var slides, currentIndex, $container;
 
   var events = {
     /*
@@ -41,22 +41,9 @@ that use the API provided by core.
     change: 'deck.change',
 
     /*
-    This event fires at the beginning of deck initialization. This event makes
-    a good hook for preprocessing extensions looking to modify the DOM before
-    the deck is fully initialized. It is also possible to halt the deck.init
-    event from firing while you do things in beforeInit. This can be done by
-    calling lockInit on the event object passed to this event. The init can be
-    released by calling releaseInit.
-
-    $(document).bind('deck.beforeInit', function(event) {
-      event.lockInit(); // halts deck.init event
-      window.setTimeout(function() {
-        event.releaseInit(); // deck.init will now fire 2 seconds later
-      }, 2000);
-    });
-
-    The init event will be fired regardless of locks after
-    options.initLockTimeout milliseconds.
+    This event fires at the beginning of deck initialization, after the options
+    are set but before the slides array is created.  This event makes a good hook
+    for preprocessing extensions looking to modify the deck.
     */
     beforeInitialize: 'deck.beforeInit',
 
@@ -82,7 +69,6 @@ that use the API provided by core.
 
   var options = {};
   var $document = $(document);
-  var $window = $(window);
   var stopPropagation = function(event) {
     event.stopPropagation();
   };
@@ -137,27 +123,11 @@ that use the API provided by core.
     }
   };
 
-  var setAriaHiddens = function() {
-    $(options.selectors.slides).each(function() {
-      var $slide = $(this);
-      var isSub = $slide.closest('.' + options.classes.childCurrent).length;
-      var isBefore = $slide.hasClass(options.classes.before) && !isSub;
-      var isPrevious = $slide.hasClass(options.classes.previous) && !isSub;
-      var isNext = $slide.hasClass(options.classes.next);
-      var isAfter = $slide.hasClass(options.classes.after);
-      var ariaHiddenValue = isBefore || isPrevious || isNext || isAfter;
-      $slide.attr('aria-hidden', ariaHiddenValue);
-    });
-  };
-
   var updateStates = function() {
     updateContainerState();
     updateChildCurrent();
     removeOldSlideStates();
     addNewSlideStates();
-    if (options.setAriaHiddens) {
-      setAriaHiddens();
-    }
   };
 
   var initSlidesArray = function(elements) {
@@ -206,10 +176,6 @@ that use the API provided by core.
 
   var bindTouchEvents = function() {
     var startTouch;
-    var direction = options.touch.swipeDirection;
-    var tolerance = options.touch.swipeTolerance;
-    var listenToHorizontal = ({ both: true, horizontal: true })[direction];
-    var listenToVertical = ({ both: true, vertical: true })[direction];
 
     $container.unbind('touchstart.deck');
     $container.bind('touchstart.deck', function(event) {
@@ -226,25 +192,22 @@ that use the API provided by core.
         }
         var xDistance = touch.screenX - startTouch.screenX;
         var yDistance = touch.screenY - startTouch.screenY;
-        var leftToRight = xDistance > tolerance && listenToHorizontal;
-        var rightToLeft = xDistance < -tolerance && listenToHorizontal;
-        var topToBottom = yDistance > tolerance && listenToVertical;
-        var bottomToTop = yDistance < -tolerance && listenToVertical;
+        var swipedLeftToRight = xDistance > options.touch.swipeTolerance;
+        var swipedRightToLeft = xDistance < -options.touch.swipeTolerance;
+        var swipedTopToBottom = yDistance > options.touch.swipeTolerance;
+        var swipedBottomToTop = yDistance < -options.touch.swipeTolerance;
 
-        if (leftToRight || topToBottom) {
+        if (swipedLeftToRight || swipedTopToBottom) {
           $.deck('prev');
           startTouch = undefined;
         }
-        else if (rightToLeft || bottomToTop) {
+        else if (swipedRightToLeft || swipedBottomToTop) {
           $.deck('next');
           startTouch = undefined;
         }
         return false;
       });
-
-      if (listenToVertical) {
-        event.preventDefault();
-      }
+      event.preventDefault();
     });
 
     $container.unbind('touchend.deck');
@@ -257,88 +220,26 @@ that use the API provided by core.
     });
   };
 
+  /*
+      Kick iframe videos, which dont like to redraw w/ transforms.
+      Remove this if Webkit ever fixes it.
+       */
+  var hackWebkitIframes = function() {
+    $.each(slides, function(i, $slide) {
+      $slide.unbind('webkitTransitionEnd.deck');
+      $slide.bind('webkitTransitionEnd.deck', function(event) {
+        if ($el.hasClass($.deck('getOptions').classes.current)) {
+          var embeds = $(this).find('iframe').css('opacity', 0);
+          window.setTimeout(function() {
+            embeds.css('opacity', 1);
+          }, 100);
+        }
+      });
+    });
+  };
+
   var indexInBounds = function(index) {
     return typeof index === 'number' && index >=0 && index < slides.length;
-  };
-
-  var createBeforeInitEvent = function() {
-    var event = $.Event(events.beforeInitialize);
-    event.locks = 0;
-    event.done = $.noop;
-    event.lockInit = function() {
-      ++event.locks;
-    };
-    event.releaseInit = function() {
-      --event.locks;
-      if (!event.locks) {
-        event.done();
-      }
-    };
-    return event;
-  };
-
-  var goByHash = function(str) {
-    var id = str.substr(str.indexOf("#") + 1);
-
-    $.each(slides, function(i, $slide) {
-      if ($slide.attr('id') === id) {
-        $.deck('go', i);
-        return false;
-      }
-    });
-
-    // If we don't set these to 0 the container scrolls due to hashchange
-    if (options.preventFragmentScroll) {
-      $.deck('getContainer').scrollLeft(0).scrollTop(0);
-    }
-  };
-
-  var assignSlideId = function(i, $slide) {
-    var currentId = $slide.attr('id');
-    var previouslyAssigned = $slide.data('deckAssignedId') === currentId;
-    if (!currentId || previouslyAssigned) {
-      $slide.attr('id', options.hashPrefix + i);
-      $slide.data('deckAssignedId', options.hashPrefix + i);
-    }
-  };
-
-  var removeContainerHashClass = function(id) {
-    $container.removeClass(options.classes.onPrefix + id);
-  };
-
-  var addContainerHashClass = function(id) {
-    $container.addClass(options.classes.onPrefix + id);
-  };
-
-  var setupHashBehaviors = function() {
-    $fragmentLinks = $();
-    $.each(slides, function(i, $slide) {
-      var hash;
-
-      assignSlideId(i, $slide);
-      hash = '#' + $slide.attr('id');
-      if (hash === window.location.hash) {
-        setTimeout(function() {
-          $.deck('go', i);
-        }, 1);
-      }
-      $fragmentLinks = $fragmentLinks.add('a[href="' + hash + '"]');
-    });
-
-    if (slides.length) {
-      addContainerHashClass($.deck('getSlide').attr('id'));
-    };
-  };
-
-  var changeHash = function(from, to) {
-    var hash = '#' + $.deck('getSlide', to).attr('id');
-    var hashPath = window.location.href.replace(/#.*/, '') + hash;
-
-    removeContainerHashClass($.deck('getSlide', from).attr('id'));
-    addContainerHashClass($.deck('getSlide', to).attr('id'));
-    if (Modernizr.history) {
-      window.history.replaceState({}, "", hashPath);
-    }
   };
 
   /* Methods exposed in the jQuery.deck namespace */
@@ -356,9 +257,6 @@ that use the API provided by core.
     parameter is an optional options object which will extend the default
     values.
 
-    Users may also pass only an options object to init. In this case the slide
-    selector will be options.selectors.slides which defaults to .slide.
-
     $.deck('.slide');
 
     or
@@ -369,62 +267,32 @@ that use the API provided by core.
        '#etc'
     ]);
     */
-    init: function(opts) {
-      var beforeInitEvent = createBeforeInitEvent();
-      var overrides = opts;
-
-      if (!$.isPlainObject(opts)) {
-        overrides = arguments[1] || {};
-        $.extend(true, overrides, {
-          selectors: {
-            slides: arguments[0]
-          }
-        });
-      }
-
-      options = $.extend(true, {}, $.deck.defaults, overrides);
+    init: function(elements, opts) {
+      options = $.extend(true, {}, $.deck.defaults, opts);
       slides = [];
       currentIndex = 0;
       $container = $(options.selectors.container);
+      tolerance = options.touch.swipeTolerance;
+
+      // Pre init event for preprocessing hooks
+      $document.trigger(events.beforeInitialize);
 
       // Hide the deck while states are being applied to kill transitions
       $container.addClass(options.classes.loading);
 
-      // populate the array of slides for pre-init
-      initSlidesArray(options.selectors.slides);
-      // Pre init event for preprocessing hooks
-      beforeInitEvent.done = function() {
-        // re-populate the array of slides
-        slides = [];
-        initSlidesArray(options.selectors.slides);
-        setupHashBehaviors();
-        bindKeyEvents();
-        bindTouchEvents();
-        $container.scrollLeft(0).scrollTop(0);
+      initSlidesArray(elements);
+      bindKeyEvents();
+      bindTouchEvents();
+      // hackWebkitIframes();
+      $container.scrollLeft(0).scrollTop(0);
 
-        if (slides.length) {
-          updateStates();
-        }
-
-        // Show deck again now that slides are in place
-        $container.removeClass(options.classes.loading);
-        $document.trigger(events.initialize);
-      };
-
-      $document.trigger(beforeInitEvent);
-      if (!beforeInitEvent.locks) {
-        beforeInitEvent.done();
+      if (slides.length) {
+        updateStates();
       }
-      window.setTimeout(function() {
-        if (beforeInitEvent.locks) {
-          if (window.console) {
-            window.console.warn('Something locked deck initialization\
-              without releasing it before the timeout. Proceeding with\
-              initialization anyway.');
-          }
-          beforeInitEvent.done();
-        }
-      }, options.initLockTimeout);
+
+      // Show deck again now that slides are in place
+      $container.removeClass(options.classes.loading);
+      $document.trigger(events.initialize);
     },
 
     /*
@@ -463,7 +331,6 @@ that use the API provided by core.
       $document.trigger(beforeChangeEvent, [currentIndex, index]);
       if (!beforeChangeEvent.isDefaultPrevented()) {
         $document.trigger(events.change, [currentIndex, index]);
-        changeHash(currentIndex, index);
         currentIndex = index;
         updateStates();
       }
@@ -513,43 +380,6 @@ that use the API provided by core.
     getSlides: function() {
       return slides;
     },
-
-    /*
-    jQuery.deck('getTopLevelSlides')
-
-    Returns all slides that are not subslides.
-    */
-    getTopLevelSlides: function() {
-      var topLevelSlides = [];
-      var slideSelector = options.selectors.slides;
-      var subSelector = [slideSelector, slideSelector].join(' ');
-      $.each(slides, function(i, $slide) {
-        if (!$slide.is(subSelector)) {
-          topLevelSlides.push($slide);
-        }
-      });
-      return topLevelSlides;
-    },
-
-    /*
-    jQuery.deck('getNestedSlides', index)
-
-    index: integer, optional
-
-    Returns all the nested slides of the current slide. If index is
-    specified it returns the nested slides of the slide at that index.
-    If there are no nested slides this will return an empty array.
-    */
-    getNestedSlides: function(index) {
-      var targetIndex = index == null ? currentIndex : index;
-      var $targetSlide = $.deck('getSlide', targetIndex);
-      var $nesteds = $targetSlide.find(options.selectors.slides);
-      var nesteds = $nesteds.get();
-      return $.map(nesteds, function(slide, i) {
-        return $(slide);
-      });
-    },
-
 
     /*
     jQuery.deck('getContainer')
@@ -650,47 +480,15 @@ that use the API provided by core.
     deck, as with the onPrefix option, or with extensions such as deck.goto
     and deck.menu.
 
-  options.selectors.slides
-    Elements matched by this selector make up the individual deck slides.
-    If a user chooses to pass the slide selector as the first argument to
-    $.deck() on initialization it does the same thing as passing in this
-    option and this option value will be set to the value of that parameter.
-
   options.keys.next
     The numeric keycode used to go to the next slide.
 
   options.keys.previous
     The numeric keycode used to go to the previous slide.
 
-  options.touch.swipeDirection
-    The direction swipes occur to cause slide changes. Can be 'horizontal',
-    'vertical', or 'both'. Any other value or a falsy value will disable
-    swipe gestures for navigation.
-
   options.touch.swipeTolerance
     The number of pixels the users finger must travel to produce a swipe
     gesture.
-
-  options.initLockTimeout
-    The number of milliseconds the init event will wait for BeforeInit event
-    locks to be released before firing the init event regardless.
-
-  options.hashPrefix
-    Every slide that does not have an id is assigned one at initialization.
-    Assigned ids take the form of hashPrefix + slideIndex, e.g., slide-0,
-    slide-12, etc.
-
-  options.preventFragmentScroll
-    When deep linking to a hash of a nested slide, this scrolls the deck
-    container to the top, undoing the natural browser behavior of scrolling
-    to the document fragment on load.
-
-  options.setAriaHiddens
-    When set to true, deck.js will set aria hidden attributes for slides
-    that do not appear onscreen according to a typical heirarchical
-    deck structure. You may want to turn this off if you are using a theme
-    where slides besides the current slide are visible on screen and should
-    be accessible to screenreaders.
   */
   $.deck.defaults = {
     classes: {
@@ -705,8 +503,7 @@ that use the API provided by core.
     },
 
     selectors: {
-      container: '.deck-container',
-      slides: '.slide'
+      container: '.deck-container'
     },
 
     keys: {
@@ -717,32 +514,11 @@ that use the API provided by core.
     },
 
     touch: {
-      swipeDirection: 'horizontal',
       swipeTolerance: 60
-    },
-
-    initLockTimeout: 10000,
-    hashPrefix: 'slide-',
-    preventFragmentScroll: true,
-    setAriaHiddens: true
+    }
   };
 
   $document.ready(function() {
     $('html').addClass('ready');
-  });
-
-  $window.bind('hashchange.deck', function(event) {
-    if (event.originalEvent && event.originalEvent.newURL) {
-      goByHash(event.originalEvent.newURL);
-    }
-    else {
-      goByHash(window.location.hash);
-    }
-  });
-
-  $window.bind('load.deck', function() {
-    if (options.preventFragmentScroll) {
-      $container.scrollLeft(0).scrollTop(0);
-    }
   });
 })(jQuery);
