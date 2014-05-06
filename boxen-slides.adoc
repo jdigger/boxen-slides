@@ -1,249 +1,942 @@
 = Boxen: OSX Configuration Beyond Dotfiles
-Jim Moore @jdigger & Brian Street @itGumby
+:author: Jim Moore & Brian Street
 :backend: deckjs
 :navigation:
+:goto:
+:menu:
+:status:
 :deckjs_theme: web-2.0
 :deckjs_transition: horizontal-slide
+:icons: font
+:check: pass:[<i class="fa fa-check-circle"></i>]
+:circle: pass:[&nbsp;]
+:cogs: pass:[<i class="fa fa-cogs"></i>]
+:download: pass:[<i class="fa fa-cloud-download"></i>]
+:external: pass:[<i class="fa fa-external-link"></i>]
+:github: pass:[<i class="fa fa-github"></i>]
+:hierarchy: pass:[<i class="fa fa-sitemap fa-rotate-180"></i>]
+:keyboard: pass:[<i class="fa fa-keyboard-o"></i>]
+:lock: pass:[<i class="fa fa-lock"></i>]
+:magic: pass:[<i class="fa fa-magic"></i>]
+:tip: pass:[<span class="fa-stack pull-left tip"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-key fa-stack-1x fa-inverse"></i></span>]
+:twitter: pass:[<i class="fa fa-twitter"></i>]
+:user: pass:[<i class="fa fa-user"></i>]
+:users: pass:[<i class="fa fa-users"></i>]
+:warn: pass:[<i class="fa fa-exclamation-triangle"></i>]
+:source-hightlighter: CodeRay
+
 
 == Abstract
-“Infrastructure as code” is accepted for our servers, but why don’t we apply it to our desktops?  Boxen is a tool that enables not just automated installation of software, but also configuration of our desktops.  Boxen puts the developer in control of their desktop (as if they weren’t anyway) but also scales across companies, teams, and even home vs work computers.
 
-We will cover the basic ideas and tools involved, as well showing some of the things you can configure (hint: everything) for really pimping your machine and making upgrading your environment much faster and consistent WAAAY beyond dotfiles. We’ll also talk about our experiences in scaling this across the developers in our team.
+``Infrastructure as code'' is accepted for our servers, but why don't we apply it to our desktops? Boxen is a tool that enables not just automated installation of software, but also configuration of our desktops. Boxen puts the developer in control of their desktop (as if they weren't anyway) but also scales across companies, teams, and even home vs work computers.
+
+We will cover the basic ideas and tools involved, as well showing some of the things you can configure (hint: everything) for really pimping your machine and making upgrading your environment much faster and consistent WAAAY beyond dotfiles. We'll also talk about our experiences in scaling this across the developers in our team.
 
 
 == Introducing Jim
 
-Jim Moore https://github.com/jdigger[jdigger]
+image::https://avatars2.githubusercontent.com/u/3276?s=460[Jim Moore]
+
+Jim Moore (https://github.com/jdigger[{github}jdigger] https://twitter.com/jdiggerj[{twitter}jdiggerj])
+
+* Principle engineer/architect at Time Warner Cable focused on http://www.timewarnercable.com[www.timewarnercable.com]
+* Long history of deep involvement in open-source (e.g., emeritus member of the Apache Software Foundation, one of the original interface21/SpringSource people), conference speaker, etc.
+* Profesional life spanning being a sysadmin to designing and building huge systems for multinationals.
+
 
 == Introducing Brian
+
 image::https://avatars3.githubusercontent.com/u/1299690?s=460[GitHub Avatar]
 
-Brian Street https://github.com/ItGumby[itGumby]
+Brian Street (https://github.com/ItGumby[{github}ItGumby] https://twitter.com/ItGumby[{twitter}ItGumby])
 
-* currently, a full stack web developer behind TWC's CMS
-* flexible generalist with a passion for automation
-* also: ETL, Databases, (Automated) QA, and Motion Control
+* Full Stack Developer on http://twc.com (Alexa Top 3000)
+* flexible engineer with a passion for automation
+* other tech interests: ETL, Databases, (Automated) QA, and Motion Control/robotics
 
 
 == Introduction: Summary
 
 Collectively, we work on a development team with more contractors than employees.
 
-We have had to "spin-up" quite a few people.
+We have had to ``spin-up'' quite a few people.
 
-We also had a batch of hot new laptops for some employees coming...
+We also had a batch of hot new laptops for some employees...
 
-== Why Boxen?
 
-[options="step"]
-* No more "follow the steps on the wiki at ..."
-* a tool meant for developers/power-users
-* install apps AND configure them
+== Why Boxen: Consistency & Repeatability
+
+* No more ``follow the steps on the wiki at ...''
+* Remove manual steps
 * configure your dev environment
-* graceful iterative customizations
 
-== Features
 
-[options="step"]
-*reinforce DevOps mantra "infrastructure is code"* +
-everything is versionable (thus rollbacks) and diff-able
+== Why Boxen: Faster
+* Small tax on initial customizations
+* Graceful iterative customizations
+* Pays back the FIRST time it is re-used
+* Install apps AND configure them (including a lot of the settings that normally require manual changes)
 
-[options="step"]
-*How do you automate software isntallation on a Mac?* +
-and other limitations...
 
-[options="step"]
-* versioning
-* assume single user
-* assume a GUI
 
-== Features: sources/types
-[.lead]#So many ways to install software. Boxen calls these *providers*.#
+== Why Boxen: Cool
+* A tool meant for developers/power-users
+* *Reinforce DevOps mantra ``infrastructure is code''*
+** Everything is versionable (thus rollbacks) and diff-able
+** Differences between environments can easily be handled
+* Apply server configuration software to your desktop
 
-[options="step"]
-*homebrew* is the default provider
 
-[options="step"]
-Other providers:
 
-[options="step"]
-* git repos
-* *appdmg*  ~(if \*.dmg contains \*.app to drag into /Applications)~
-* *appdmg_eula*  ~(if \*.dmg asks for a license agreement when it is opened and contains \*.app to drag into /Applications)~
-* *pkgdmg*  ~(if \*.pkg contains installer )~
-* *compressed_app*  ~(if \*.zip to unzip & place into /Applications)~
-* gem, nvm, etc.
-* macports
+== Why Boxen: Desktops are ``Special''
 
-== Features: Out of the Box Software
+*How do you automate software installation on a Mac (or any ``desktop'' OS)?*
 
-* brew
-* git
-* rbenv, versions of Ruby
-* nvm, versions of nodeJS
-* full disk encryption (opt-out on bootstrap)
+* Lack of exposed software versioning
+* Installation assumes single user
+* Installation assumes a GUI
 
-== Getting Started
 
-[options="step"]
-. https://boxen.github.com/[boxen-web]
-. the bootstrap
-.. `sudo mkdir -p /opt/boxen`
-.. `sudo chown ${USER}:staff /opt/boxen`
-.. `git clone https://github.webapps.rr.com/bstreet/twc-boxen /opt/boxen/repo`
-.. `cd /opt/boxen/repo`
-.. `./script/boxen --no-fde`
-. Customize & iterate
-.. edit modules/packages/people/nodes
-.. re-run `boxen`
 
 == Requirements
 
-[options="step"]
-* Mac OSX10.8+ only for now.
-** The project wants pull-requests for other platforms _that puppet is on_
-* XCode CLI required
-* ssh keys created, uploaded to GH/repos
-* accessible source url _(ie JDK’s register per download)_
-* confusion: GH user vs GHE user
+* Mac OS X 10.8+ only. ([small]#Call To Action:# pull-requests for other platforms)
+* XCode CLI (slightly tricky pre-Mavericks)
+* accessible source urls _(e.g., Oracle JDK's licensing limits this)_
 
-== Terms
 
-=== Puppet Terms
-* Manifest
-* Module
-* Package (Provider)
-* Facts (Facter)
-* Librarian
-* Hiera
-* [strike]#Profiles & Roles# (not covered here)
+== Primary Components
 
-=== Boxen Terms
-* User
-* Project ~can depend on other projects as pseudo heirarchy~
+[cols="1a,4a"]
+|===
+| *GitHub* | version control and user management
+| *Puppet* | system configuration
+| *Puppet Librarian* | module management for Puppet
+| *Homebrew* | provides ``most'' of the software
+| *Ruby* (rbenv) | most of the scripting
+|===
+
+
+
+== Software Package Providers
+
+There are many ``*providers*'' of software. Some examples:
+
+[cols="1a,4a", options="header"]
+|===
+| Provider | Notes
+| *homebrew* | the default for Boxen, it's one of the most fully capable
+| *appdmg* | if *.dmg contains *.app to drag into /Applications
+| *appdmg_eula* | if *.dmg asks for a license agreement when it is opened and contains *.app to drag into /Applications
+| *pkgdmg* | if *.pkg contains installer
+| *compressed_app* | if *.zip to unzip & place into /Applications
+| *macports* | supported, but doesn't always play well with *homebrew*
+|===
+
+
+Other sources include +gem+, +npm+, +pip+, ...
+
+== Provider Features
+
+The OS X packaging providers are, in general, incredibly ``limited''.  By definition, providers install software.  Some can do more:
+
+[columns="1a,4a", options="header"]
+|===
+| Provider       | Uninstall | Versionable | Updatable
+| appdmg         | {circle}  | {circle}    | {circle}
+| appdmg_eula    | {circle}  | {circle}    | {circle}
+| compressed_app | {check}   | {circle}    | {circle}
+| compressed_pkg | {circle}  | {circle}    | {circle}
+| homebrew       | {check}   | {check}     | {check}
+| macports       | {check}   | {check}     | {check}
+| pkgdmg         | {circle}  | {circle}    | {circle}
+|===
+
+Providers (other than +homebrew+ & +macports+) track package installation at +/var/db/.puppet_{provider}_installed_{package_name}+
+
+Therefore, to re-install, you must *delete* the file above before running boxen again.
+
+
+
+== Boxen Limitations
+
+The *primary* limitation is that it's not (yet?) able to install software from the Apple App Store.
+
+Otherwise install and configure your entire system automatically without manual steps.  The time cost is primarily download time.
+
+
+
+== Getting Started: The Bootstrap
+
+[source,shell]
+--
+sudo mkdir -p /opt/boxen
+sudo chown ${USER}:staff /opt/boxen
+git clone [your_boxen_repo] /opt/boxen/repo
+cd /opt/boxen/repo
+./script/boxen [--no-fde]<1>
+--
+<1> defaults to Full Disk Encryption
+
+=== Alternate: Boxen Web
+
+* https://boxen.github.com/[boxen-web]
+** uses heroku to provide customized homepage & OAuth
+
+
+== Getting Started: Customize & Iterate
+
+* Edit
+** modules
+** packages
+** people
+** ...
+* re-run +/opt/boxen/script/boxen+
+
+
+
+== Puppet Terms: Basic Structure
+
+[small]#(Highly, highly simplified)#
+
+[cols="1a,4a"]
+|===
+| *Module* | Effectively Puppet's ``library'' unit
+| *Manifest* | The file containing the description/script
+| *Resource* | A unit of configuration ( e.g., ``file'', ``package'' )
+| *Class* | A singleton managing Resources
+| *Defined Type* | Can have more than one instance managing Resources
+|===
+
+http://docs.puppetlabs.com/references/glossary.html[Puppet Glossary]
+
+In general, ``Module'' has at least one ``Manifest'' which has at least one ``Class''
+
+
+== Puppet Terms: Resources
+
+Every resource has:
+
+* Type (such as +package+, +file+, +exec+, ...)
+* Title
+* >1 attributes
+** e.g., an ``ensure'' attribute with a value of ``present''
+
+Resources can (and often do) depend on other resources. Puppet will build a dependency graph to make sure everything is applied in the correct order. Each resource title must be unique in the DAG.
+
+
+== Puppet Terms: Misc
+
+[cols="1a,4a"]
+|===
+| *Facts* (Facter) | Descrete information about the machine (FQDN, IP addr, OS, etc.) gathered by ``facter''
+| *Puppet Librarian* | Used for managing Puppet Modules
+| *Hiera* | **Hiera**rchical data: a flexible way of providing configuration data based on ``facts''
+| *Profiles & Roles* | Not covered here, but a Puppet Enterprise convention for organizing Hiera data
+|===
+
+
+== Boxen Terms
+
+[cols="1a,4a"]
+|===
+| *User* | Defined by the ``fact'': `::boxen_user`
+| *Project* | A grouping meant for ``make sure people on this team have at least this configuration''; you can have multiple ``projects'' applied to a machine
+|===
+
 
 == Packages
-[.lead]#Packages are the "workhorse" of boxen#
+
+Packages are the primary way software is installed. link:http://docs.puppetlabs.com/references/latest/type.html#package[{external}]
+
+Simple example:
 
 ```ruby
-package { ‘PackageName’:    ## meaningful to you
-    ensure => ___,          ## [installed, present, link, directory, stopped]
-    source => user/repo,    ## or http://..., git@...
-    provider => ___,        ## defaults to homebrew
-    require => [...],       ## list of packages, files, etc that have to be installed before this package
+package { 'gradle':
+    ensure   => "installed",<1>
+    provider => "homebrew",
+}
+
+package { "IntelliJ-IC-12.1.4":
+    provider => 'appdmg_eula',
+    source   => "http://download.jetbrains.com/idea/ideaIC-12.1.4.dmg",
 }
 ```
+<1> typically defaults to ``present''. Valid values vary by resource type & provider.  May include +installed+, +latest+, +absent+, or a specific version/version range (e.g., +">= 1.12"+)
 
-[options="step"]
-```ruby
-package {[        ## homebrew shortcut - list
-    ‘gradle’,
-    ‘groovy’,
-    ‘app3’,
-    …
-]:}
-```
 
-== Alternatives to Packages
-```ruby
-class {...} ## to configure
-```
+== Other Resources: File
 
-[options="step"]
-```ruby
-ruby::gem { “label”:
-    gem => ‘gem-name`,
-    ruby => 1.9.3,        ## gems have to install to a version of ruby
-    version => ‘~> 2.0`,  ## notation for at least
-}                         ## probably equivalent for node/npm
-```
+http://docs.puppetlabs.com/references/latest/type.html#file[Puppet File Documentation{external}]
 
-[options="step"]
-```ruby
-file { {path}:
-    ensure => present/link/directory,
-    target => {targetPath},    ## if link
-    require => [...],
+[source,ruby]
+--
+$home = "/Users/${::boxen_user}"<1>
+
+file { "${home}/.zshrc":
+  source => 'puppet:///modules/people/jdigger/zshrc',<2>
 }
-```
 
-[options="step"]
-```ruby
-exec { “gjslint”:
-    command => “easy_install {url}”,
-    creates => {path},    ## test if this has already completed successfully
+file { "${home}/.zshenv":
+  content => template('people/jdigger/zshenv.erb'),<3>
 }
-```
+--
+<1> define a variable based on a ``fact''
+<2> a static file from a module
+<3> set the content from a template (Ruby ERB by default)
+
+
+== Other Resources: Repository
+
+https://github.com/boxen/puppet-repository[GitHub Repository{external}]
+
+[source,ruby]
+--
+$home = "/Users/${::boxen_user}"
+$srcdir = "${home}/src"
+
+repository { "${srcdir}/git-process" :
+  source   => 'https://github.com/jdigger/git-process.git',
+  path     => "${srcdir}/git-process",
+  provider => 'git',
+}
+--
+
+
+== Other Resources: Ruby Gem
+
+[source,ruby]
+--
+$ruby_version = '1.9.3'
+
+ruby::gem { "git-process for ${ruby_version}":<1>
+    gem     => 'git-process',
+    ruby    => $ruby_version,<2>
+    version => '~> 2.0',<3>
+}
+--
+<1> because there could be potentially more than one installation of the gem (in the various rbenv versions) it's a good idea to put the Ruby version in the resource name so it is guaranteed to be unique
+<2> the version of Ruby (using rbenv) to install the gem into
+<3> of course gem versions can use the semantic versioning support of Ruby Gems
+
+
+== Other Resources: Plist
+
+[source,ruby]
+.example of configuring Adium
+--
+property_list_key { 'Adium users':
+  path       => "${home}/Library/Application Support/Adium 2.0/Users/Default/Accounts.plist",
+  key        => 'Accounts',
+  value      => [
+    {
+      'Service'  => 'GTalk',
+      'UID'      => $gtalk_name,
+      'Type'     => 'libpurple-jabber-gtalk',
+      'ObjectID' => '1',
+    },
+    {
+      'Service'  => 'Yahoo!',
+      'UID'      => $yahoo_name,
+      'Type'     => 'libpurple-Yahoo!',
+      'ObjectID' => '2',
+    },
+    {
+      'Service'  => 'AIM',
+      'UID'      => $aim_name,
+      'Type'     => 'libpurple-oscar-AIM',
+      'ObjectID' => '3',
+    },
+  ],
+  value_type => 'array',
+}
+--
+Requires the https://github.com/glarizza/puppet-property_list_key[``glarizza/puppet-property_list_key'' module]
+
+See the https://developer.apple.com/librarY/mac/documentation/Darwin/Reference/ManPages/man1/plutil.1.html[plutil man page].
+
+
+== Other Resources: OSX
+
+[source,ruby]
+--
+boxen::osx_defaults { 'scrollbars always on':
+  domain => 'NSGlobalDomain',
+  key    => 'AppleShowScrollBars',
+  value  => 'Always',
+  user   => $::boxen_user,
+}
+osx::recovery_message { 'If this Mac is found, please call 555-555-5555': }
+include osx::finder::unhide_library
+--
+
+See the https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/defaults.1.html[defaults man page].
+
+An awesome list of available settings/tools can be found at https://github.com/kevinSuttle/OSXDefaults[OSXDefaults].
+
+
+== Other Resources: Exec
+
+http://docs.puppetlabs.com/references/latest/type.html#exec[Puppet Exec Documentation{external}]
+
+[source,ruby]
+--
+$source_tgz =
+    'http://closure-linter.googlecode.com/files/closure_linter-latest.tar.gz'<1>
+
+exec { 'install gjslint':<2>
+    command => "easy_install ${source_tgz}",
+    user    => 'root',<3>
+    creates => '/usr/local/bin/gjslint',<4>
+}
+--
+<1> should come in as part of a class definition...
+<2> arbitrary resource name: if ``command'' not given, this is used, but generally best to give it a ``meaningful'' name
+<3> the user to `sudo` as when executing the command
+<4> before running the command the existence of this file is checked; if it's there it's assume this has already run
+
+Instead of ``creates'', you can use ``onlyif''/``unless'' to run a command, such as
+[source,ruby]
+--
+unless => 'grep root /usr/lib/cron/cron.allow 2>/dev/null'
+--
+
+
+== Defining Classes
+
+The *primary* way of referencing groups of Resources is via Classes.
+
+A Class may take parameters for configuration.
+
+[source,ruby]
+.from puppet-intellij (slide-ware version)
+--
+class intellij($edition='community', $version='13.1.1') {
+  case $edition {
+    'community': { $edition_real = 'IC' }
+    'ultimate': { $edition_real = 'IU' }
+    default: { fail('Class[intellij]: parameter edition must be community or ultimate') }
+  }
+
+  package { "IntelliJ-IDEA-${edition_real}-${version}":
+    provider => 'appdmg_eula',
+    source   => "http://download.jetbrains.com/idea/idea${edition_real}-${version}.dmg",
+  }
+}
+--
+
+
+== Defining Classes (annotated)
+
+[source,ruby]
+--
+class intellij($edition='community', $version='13.1.1') {
+  case $edition { <1>
+    'community': { $edition_real = 'IC' }
+    'ultimate': { $edition_real = 'IU' }
+    default: { fail('Class[intellij]: parameter edition must be community or ultimate') } <2>
+  }
+
+  package { "IntelliJ-IDEA-${edition_real}-${version}": <3>
+    provider => 'appdmg_eula', <4>
+    source   => "http://download.jetbrains.com/idea/idea${edition_real}-${version}.dmg", <5>
+  }
+}
+--
+<1> Conditionals for setting "private" variable
+<2> Able to fail the configuration before anything is applied
+<3> Variable substitution. (Resource names must be unique)
+<4> Install from .dmg, auto-accepting the EULA
+<5> Where to download the installation package from
+
+
+== Calling Classes
+
+[source,ruby]
+.Explicitly calling with parameters
+--
+class { "intellij":
+    edition => 'community',
+    version => '13.1.1',
+}
+--
+
+[source,ruby]
+.Calling with default parameters
+--
+class { "intellij": }
+--
+
+[source,ruby]
+.Importing with default parameters
+--
+import "intellij"
+--
+
+{tip} The `import` form has the advantage over `class {:}` in that `class {:}` can only appear once in your entire graph. `import` will add the class resource if it's not yet defined, or ignore it if not.
+
+
+== Calling Classes with Hiera
+
+Want simple resource declarations *AND* centralized/powerful configuration data (like versions)? That's what http://docs.puppetlabs.com/hiera/1/complete_example.html[Hiera] is for... {magic}
+
+
+[source,ruby]
+.Importing with parameter lookup
+--
+import "intellij"
+--
+
+[source,yaml]
+.Hiera YAML configuration
+--
+intellij::edition: 'ultimate'
+intellij::version: '13.1.2'
+--
+
+Separates usage from configuration
+
+
+== Defined Types
+
+Defined Types are similar to Classes, providing scoping, resource management, ability to pass in parameters, etc.
+
+Unlike Classes, you can have multiple instances. Because of that, you can't use +include+ or tools like Hiera to configure them.
+
+[source,ruby]
+.from the +boxen/puppet-sublime_text_2+ modules
+--
+define sublime_text_2::package($source) {
+  require sublime_text_2::config
+
+  repository { "${sublime_text_2::config::packagedir}/${name}":
+    source => $source
+  }
+}
+--
+
+{tip} If you're trying to decide between declaring something +class+ or +define+, err toward +class+
+
+
+== Resource Defaults
+
+[source,ruby]
+.repo/manifests/site.pp (simplified)
+--
+exec {
+  group => 'staff',
+  user  => $boxen_user,
+  path  => [
+    "${boxen::config::home}/rbenv/shims",
+    "${boxen::config::home}/rbenv/bin",
+    "${boxen::config::home}/homebrew/bin",
+    '/usr/bin', '/bin', '/usr/sbin', '/sbin',
+  ],
+}
+
+File {
+  group => 'staff',
+  owner => $boxen_user,
+}
+
+Package {
+  provider => homebrew,
+}
+
+Repository {
+  provider => git,
+}
+
+Service {
+  provider => ghlaunchd,
+}
+--
+
 
 == Brief Structure
 
-[options="step"]
-* `~/.boxen/config.json`
-* out of box:
-** `BOXEN_HOME=/opt/boxen`
-** `$BOXEN_HOME/bin/*`
-** `$BOXEN_HOME/config/**`
-* your changes
-** `REPO=$BOXEN_HOME/repo` _where you make changes_
-** `$REPO/Puppetfile` _puppet librarian_
-**** `mod, {module_name}, {version/tag}[, {source}]`
-**** https://github.com/boxen?query=puppet-[Search for Module Names]
-**** use repository *tag* to specify version
-** `$REPO/modules/people/manifests/{gh_user}.pp` _primary source_
-**** `include people::{gh_user}::applications`
-** `$REPO/modules/people/{gh_user}/applications.rb` _ruby class listed above_
-* Advanced
-** `$REPO/shared/lib/facter/boxen.rb` _discover some facts_ `$::github_name, $::boxen_user, etc`
+Boxen default installation at +/opt/boxen+
 
-== Planning Customizations
+All user edits to the +repo+ subdirectory (+/opt/boxen/repo/+)
 
-[.lead]#Consider...#
 
-* company
-* team
-* user
-* host
-* parameterize, facter facts
+== Editing +/opt/boxen/repo+
 
-[options="step"]
-* configure pLists
-* links, folders, etc
-* script execution
+Ordered roughly by likelihood that you'll modify something.
 
-== Use Case: private
+[cols="1a,4a"]
+|===
+| +modules/+ | the Puppet ``modules'' to load; *most customization happens here*
+| +modules/people+ | contains the module associated with a specific person {user}
+| +Puppetfile+ | control file for Puppet Librarian {download}
+| +hiera/+ | data-based configuration {hierarchy}
+| +modules/projects+ | contains the module associated with projects {users}
+| +manifests/site.pp+ | sets the defaults for the loaded modules
+| +config/+ | contains some files for tweeking more advanced features
+|===
 
-* dotfiles
-* tokens
 
-== Recommendations
+== Parts to Avoid Editing in +/opt/boxen/repo+
 
-* organization
-** ghUser
-** people
-** modules
-** hiera
-* forking, branching
-* parameters, facts
+Directories you should not directly interact with:
+
+[cols="1a,4a"]
+|===
+| +script/+ | contains the primary scripts, including `boxen` itself {keyboard}
+| +shared/+, +vendor/+ | cache for Librarian modules
+| +bin/+ | the shims for installed Ruby Gems, including Puppet
+| +../+ | where Boxen installs a lot of its other control files
+| +*.lock+ | control files for version locking {lock}
+|===
+
+{warn} The *.lock files are great when you understand them, and generally stay out of your way even when you don't. But they can be a bit of a pain when you merge in remote changes to the project... See https://github.com/boxen/our-boxen/blob/master/docs/faq.md[the FAQ].
+
+
+== Boxen User Edits
+
+Directory: +/opt/boxen/repo/modules/people+
+
+By default \{user} is based on your GitHub user ID.  However, you can leverage parts and pieces from other users.
+
+[cols="1a,4a"]
+|===
+| +manifests/\{user}.pp+ | primary manifest for a user
+| +manifests/\{user}/+ | where your ``subclasses'' go
+| +files/\{user}/+ | static resources for the user
+| +templates/\{user}/+ | templatized resources for the user
+| +spec/+ | unit tests for the manifests
+|===
+
+
+== Example User Manifest
+
+[source,ruby]
+.modules/people/jdigger.pp
+--
+class people::jdigger {
+    include people::jdigger::dotfiles
+    include people::jdigger::bin
+    include people::jdigger::applications
+    include people::jdigger::ruby
+    include people::jdigger::git
+    include people::jdigger::sublime_text_2
+    include people::jdigger::osx
+}
+--
+
+Just as it's good practice in OOD to delegate low-level details to subclasses, you should do the same in Puppet class design as well.
+
+
+== Example ``Sub Class''
+
+[source,ruby]
+.modules/people/jdigger/sublime_text_2.pp
+--
+class people::jdigger::sublime_text_2 {
+  include 'sublime_text_2'<1>
+
+  $home = "/Users/${::boxen_user}"
+
+  file { "${home}/Library/Application Support/Sublime Text 2/Packages/User":
+    ensure => 'directory',
+    owner  => $::boxen_user,
+    mode   => '0755',
+  } <2>
+  -> <3>
+  file { "${home}/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings":
+    source  => 'puppet:///modules/people/jdigger/sublime-settings',
+  } <4>
+}
+--
+<1> make use of the ``general'' +sublime_text_2+ module
+<2> ensure that the user preferences directory exists
+<3> shorthand to declare that the following resource needs the previous one to be applied first
+<4> I want Sublime Text 2 to behave the same for me regardless of what machine I'm on, so any changes I make to the settings are done in the module
+
+
+== Puppet Librarian: Puppetfile
+
+https://github.com/rodjek/librarian-puppet[Puppet Librarian usage/syntax {external}]
+[source,ruby]
+.some standard entries
+--
+github "dnsmasq",  "1.0.1"
+github "gcc",      "2.0.100"
+github "git",      "2.3.0"
+github "homebrew", "1.6.2"
+--
+
+Where `github` is a function that translates
+```ruby
+github "git", "2.3.0"
+```
+to
+```ruby
+mod "git", "2.3.0", :github_tarball => "boxen/puppet-git"
+```
+
+
+== Puppet Librarian: Finding Modules
+
+https://github.com/boxen?query=puppet-[Search for Module Names {external}]
+
+image::boxen_puppet-intellij_releases_tab.png[link="https://github.com/boxen/puppet-intellij"]
+
+image::releases-boxen_puppet-intellij.png[link="https://github.com/boxen/puppet-intellij/releases"]
+
+
+== Boxen Facter Extensions
+
+[source,ruby]
+.snippet from shared/lib/facter/boxen.rb
+--
+dot_boxen   = "#{ENV['HOME']}/.boxen"
+user_config = "#{dot_boxen}/config.json"
+
+require "boxen/config"
+config = Boxen::Config.load
+
+facts["github_login"]  = config.login
+facts["github_email"]  = config.email
+facts["github_name"]   = config.name
+facts["github_token"]  = config.token
+
+facts["boxen_home"]     = config.homedir
+facts["boxen_srcdir"]   = config.srcdir
+facts["boxen_repodir"]  = config.repodir
+facts["boxen_reponame"] = config.reponame
+facts["boxen_user"]     = config.user
+#..
+--
+
+The ``cached'' values for those are in `/opt/boxen/config/boxen/defaults.json`
+
+You can set your own personal/private custom Facts in +~/.boxen/config.json+
+
+
+== Use Case: Private vs Personal
+
+Typical personal configuration goes in +modules/${::github_login}+, which is *public* to a boxen repo. This is generally http://zachholman.com/2010/08/dotfiles-are-meant-to-be-forked/[a *very* good thing].
+
+{warn}However, some facts do not belong in a public location (Passwords, SSH keys, OAuth tokens, etc.){warn}
+
+For configuration that can easily be turned into ``data'' -- especially if it would be used in multiple places when configuring the system (e.g., user names and passwords) -- the `~/.boxen/config.json` file is perfect.
+
+For configuration that's more complex, like your `~/.ssh` directory, create a private https://bitbucket.org/[BitBucket repository], or encrypted .zip in Dropbox, or ...
+
+Keep it *simple* and secure: You want it to be easily accessible before the rest of your system is set up.
+
+
+== Tips: General
+
+* Use the +--noop+ option
+* *Don't install/configure your machine except via Boxen* (this is a culture shift, but worth it)
+* The +--debug+ output has a wealth of information, but can be overwealming
+* Don't forget it's all code and backed by git: use the forking and branching processes you normally would
+* Design your classes using parameters and facts, keeping Hiera in mind
+* Especially if you're creating modules ``for realz'' (or are just suitably paranoid), run in a VM: http://thezinx.com/2013/10/29/create-bootable-dmg-iso-mavericks-app.html[Creating an ISO]
+
+
+== Tips: Infrastructure As Code
+
+*Don't forget it's all code and backed by git*
+
+Use the forking and branching processes you normally would
+
+[source,ruby]
+.merge with the upstream (e.g., +boxen/our-boxen+) often
+--
+git remote add boxen https://github.com/boxen/our-boxen.git
+git fetch --all
+git merge boxen/master
+--
+{warn} When you get merge conflicts on +*.lock+ files, https://github.com/boxen/our-boxen/blob/master/docs/faq.md[see the FAQ]
+
+Make use of other people's modules, and post your own!
+
+
+== Tips: Re-use by Module
+
+Create +modules/packages/+ for general-purpose Puppet classes to share across users or projects
+
+*Publish useful packages.* OSS benefits all, and the ``packages'' module and its like should be considered temporary/stop-gap.
+
+This also works well for ``proprietary'' software/configurations (though those may be published on an internal repo instead of a public one).
+
+
+== Tips: Avoid `node default'
+
+The default `repo/manifests/site.pp` contains a `node default` section that will get loaded up on every machine. There's two problems with it:
+
+. The ``out of the box'' list contains a bunch of stuff that non-GitHub.com people may or may not care about having loaded up on their machine (e.g. NodeJS, ngnix, 4 versions of Ruby)
+. `node default` doesn't allow changing configuration values, etc.
+
+It's a legacy of Puppet 1.0, long before much more flexible mechanisms like Hiera.
+
+
+== Tips: Use Hiera
+
+A much better approach
+[source,ruby]
+.replace `node default' in `site.pp' with
+--
+if hiera_array('classes', undef) {
+  hiera_include('classes')
+}
+--
+
+Then, if you want to make sure everyone's got Ruby set up...
+[source,yaml]
+.hiera/common.yaml
+--
+classes:
+  - ruby::global
+ruby::global::version: "2.1.1"
+ruby::rbenv_plugins:
+  ruby-build:
+    ensure: v20140420
+    source: sstephenson/ruby-build
+--
+
+
+== Tips: Hiera Power
+
+With https://github.com/jdigger/boxen/blob/d5502c936d5d7aaa0212a6d2fb00f2d0d6be4c70/modules/packages/manifests/sublime_text_2_package_management.pp[a simple shim] you can do things like this:
+
+[source,yaml]
+.hiera/developer.yaml
+--
+sublime_text_2::packages:
+  'BracketHighlighter':
+    source: 'facelessuser/BracketHighlighter'
+  'CodeIntel':
+    source: 'SublimeCodeIntel/SublimeCodeIntel'
+  'Git':
+    source: 'kemayo/sublime-text-git'
+  'GitGutter':
+    source: 'jisaacks/GitGutter'
+--
+
+[source,yaml]
+.hiera/users/jdigger.yaml
+--
+sublime_text_2::packages:
+  'AsciiDoc':
+    source: 'SublimeText/AsciiDoc'
+  'Markdown-Preview':
+    source: 'revolunet/sublimetext-markdown-preview'
+  'PrettyJson':
+    source: 'dzhibas/SublimePrettyJson'
+  'Puppet':
+    source: 'russCloak/SublimePuppet'
+--
+
+
+== Tips: Hiera Structure
+
+For example:
+[source,yaml]
+.repo/config/hiera.yaml
+--
+---
+:merge_behavior: deeper
+:backends:
+  - yaml
+:yaml:
+  :datadir: "%{::boxen_home}/repo/hiera"
+:hierarchy:
+  - "users/%{::github_login}/nodes/%{::hostname}"
+  - "users/%{::github_login}/nodes/common"
+  - "users/%{::github_login}"
+  - "projects/%{::boxen_project_01}"
+  - "projects/%{::boxen_project_02}"
+  - "projects/%{::boxen_project_03}"
+  - "projects/%{::boxen_project_04}"
+  - "projects/%{::boxen_project_05}"
+  - "projects/%{::boxen_project_06}"
+  - "projects/%{::boxen_project_07}"
+  - "projects/%{::boxen_project_08}"
+  - "projects/%{::boxen_project_09}"
+  - "projects/%{::boxen_project_10}"
+  - "projects/common"
+  - "common"
+--
+
+
+== Tips: Roles
+
+More advanced, but it can be worth borrowing some techniques from Puppet Enterprise
+
+[source,ruby]
+.modules/people/jdigger/applications.pp
+--
+class people::jdigger::applications ($system_roles = undef) {
+  $_system_roles = hiera_array('people::jdigger::system_roles', [])
+  $roles = $system_roles ? { undef => $_system_roles, default => $system_roles}
+
+  include people::jdigger::applications::general
+
+  if member($roles, 'work') {
+    include 'people::jdigger::applications::work'
+  }
+  if member($roles, 'personal') {
+    include 'people::jdigger::applications::personal'
+  }
+}
+--
+
+[source,ruby]
+.hiera/users/jdigger/nodes/imac.yaml
+--
+boxen::security::require_password: false
+people::jdigger::system_roles:
+  - personal
+--
+
+[source,ruby]
+.modules/people/jdigger/applications/personal.pp
+--
+class people::jdigger::applications::personal {
+  include 'calibre'
+  include 'steam'
+}
+--
+
 
 == Troubleshooting
 
-[options="step"]
 * http://stackoverflow.com/questions/22352838/ruby-gem-install-json-fails-on-mavericks-and-xcode-5-1-unknown-argument-mul[XCode 5.1]
-* debugging
-* upgrading packages
-* [strike]#upgrading boxen master#
-* uninstalling: `/opt/boxen/repo/script/nuke`
+* https://github.com/boxen/our-boxen/blob/master/docs/faq.md[Read the FAQ]
+* https://github.com/boxen/our-boxen/blob/master/docs/faq.md[Seriously, read the FAQ]
+* confusion: GH user vs GHE user
+
+
+== Summary
+
+* Easy to start
+* Easy to iterate
+* Fast return on investment
+* Installation + Configuration
+* All the advantages of source control
+* [small]#Call To Action# Bring to other puppet platforms!
+
 
 == Resources
 
-* https://boxen.github.com/
-* http://www.dmuth.org/node/1431/tweaking-boxen-osx
-* http://garylarizza.com/blog/2013/02/15/puppet-plus-github-equals-laptop-love/
-* http://docs.puppetlabs.com/learning/
-* https://webconference.twcable.com/p7oudsr7jp4/ ?
+* https://boxen.github.com/[Boxen Homepage]
+* http://garylarizza.com/blog/2013/02/15/puppet-plus-github-equals-laptop-love/[A good blog entry]
+* http://www.dmuth.org/node/1431/tweaking-boxen-osx[Another (shorter) blog entry]
+* http://docs.puppetlabs.com/learning/[Learning Puppet]
+* https://github.com/jdigger/boxen.git[Jim's Boxen]
+* https://webconference.twcable.com/p7oudsr7jp4/[Recording of brown-bag Jim gave at TWC]
 
-[options="step"]
-* https://octodex.github.com/ for my avatar
+Attribution
+
+* www.macforensicslab.com for robot
+////
+* octodex.github.com
+* https://octodex.github.com/ for Brian's avatar
+////
 
 == Thank You!
 
