@@ -1,32 +1,10 @@
 # README
 
-This is a simple repo for a presentation I intend to share.
+The source for the presentation is `boxen-slides.adoc`, which is using [Asciidoctor + deck.js integration](http://asciidoctor.org/docs/install-and-use-deckjs-backend/).
 
-## Setup / pre-conditions
-
-[Asciidoctor + deck.js integration](http://asciidoctor.org/docs/install-and-use-deckjs-backend/)
+To generate the presentation, which will then be created in `boxen-slides.html`, simply run
 ```shell
-mkdir boxen-slides; cd boxen-slides
-# set ruby version for this project
-rbenv local 2.0.0-p247
-# install required tools
-gem install asciidoctor tilt haml
-# get libraries (may want outside of current project)
-git clone git://github.com/asciidoctor/asciidoctor-backends.git
-git clone git://github.com/imakewebthings/deck.js.git
+./slides generate
 ```
 
-## Testing presentation
-
-Basically, I edited `test.adoc` with code snippets from the integration link above.
-Then, I ran:
-```shell
-asciidoctor -T asciidoctor-backends/haml test.adoc
-open test.html
-```
-
-## "Building" the presentation
-
-* edit `boxen-slides.adoc`
-* `asciidoctor -T asciidoctor-backends/haml boxen-slides.adoc`
-* open boxen-slides.html
+The only precondition is having [rbenv](https://github.com/sstephenson/rbenv) installed, as everything else will be automatically resolved.
