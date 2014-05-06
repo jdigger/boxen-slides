@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+<meta content="IE=edge,chrome=1" http-equiv="X-UA-Compatible">
+<meta content="Asciidoctor 0.1.4" name="generator">
+<meta content="Jim Moore @jdigger &amp; Brian Street @itGumby" name="author">
+<title>Boxen: OSX Configuration Beyond Dotfiles</title>
+<link href="http://netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
+<style>
+.conum { display: inline-block; color: white !important; background-color: #222222; -webkit-border-radius: 100px; border-radius: 100px; text-align: center; width: 1.2em; height: 1.2em; font-size: 0.9em; font-weight: bold; line-height: 1.2; font-family: Arial, sans-serif; font-style: normal; position: relative; top: -0.1em; }
+.conum * { color: white !important; }
+.conum + b { display: none; }
+.conum:after { content: attr(data-value); }
+.conum:not([data-value]):empty { display: none; }
+.colist table td:first-of-type { padding-right: 0.25em; }
+</style>
+<link href="deck.js/core/deck.core.css" rel="stylesheet">
+<link href="deck.js/extensions/hash/deck.hash.css" media="screen" rel="stylesheet">
+<link href="deck.js/extensions/scale/deck.scale.css" media="screen" rel="stylesheet">
+<link href="deck.js/extensions/goto/deck.goto.css" media="screen" rel="stylesheet">
+<link href="deck.js/extensions/menu/deck.menu.css" media="screen" rel="stylesheet">
+<link href="deck.js/extensions/navigation/deck.navigation.css" media="screen" rel="stylesheet">
+<link href="deck.js/extensions/status/deck.status.css" media="screen" rel="stylesheet">
+<link href="deck.js/themes/style/web-2.0.css" media="screen" rel="stylesheet">
+<link href="deck.js/themes/transition/horizontal-slide.css" media="screen" rel="stylesheet">
+<link href="customcss.css" rel="stylesheet">
+<link href="deck.js/core/print.css" media="print" rel="stylesheet">
+<script src="deck.js/modernizr.custom.js"></script>
+</head>
+<body class="deck-container article">
+<section class="slide" id="title-slide">
+<h1>Boxen: OSX Configuration Beyond Dotfiles</h1>
+<span id="author">Jim Moore @jdigger &amp; Brian Street @itGumby</span>
+<br>
+</section>
+<section class="slide" id="_abstract">
+<h2>Abstract</h2>
+<div class="paragraph"><p>&#8220;Infrastructure as code&#8221; is accepted for our servers, but why don&#8217;t we apply it to our desktops? Boxen is a tool that enables not just automated installation of software, but also configuration of our desktops. Boxen puts the developer in control of their desktop (as if they weren&#8217;t anyway) but also scales across companies, teams, and even home vs work computers.</p></div>
+
+<div class="paragraph"><p>We will cover the basic ideas and tools involved, as well showing some of the things you can configure (hint: everything) for really pimping your machine and making upgrading your environment much faster and consistent WAAAY beyond dotfiles. We&#8217;ll also talk about our experiences in scaling this across the developers in our team.</p></div>
+</section>
+
+<section class="slide" id="_introducing_jim">
+<h2>Introducing Jim</h2>
+<div class="imageblock">
+<div class="content">
+<img alt="Jim Moore" src="https://avatars2.githubusercontent.com/u/3276?s=460">
+</div>
+</div>
+
+<div class="paragraph"><p>Jim Moore (<a href="https://github.com/jdigger"><i class="fa fa-github"></i>jdigger</a> <a href="https://twitter.com/jdiggerj"><i class="fa fa-twitter"></i>jdiggerj</a>)</p></div>
+
+<div class="ulist">
+<ul>
+<li>Principle engineer/architect at Time Warner Cable focused on <a href="http://www.timewarnercable.com">www.timewarnercable.com</a></li>
+<li>Long history of deep involvement in open-source (e.g., emeritus member of the Apache Software Foundation, one of the original interface21/SpringSource people), conference speaker, etc.</li>
+<li>Profesional life spanning being a sysadmin to designing and building huge systems for multinationals.</li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_introducing_brian">
+<h2>Introducing Brian</h2>
+<div class="imageblock">
+<div class="content">
+<img alt="GitHub Avatar" src="https://avatars3.githubusercontent.com/u/1299690?s=460">
+</div>
+</div>
+
+<div class="paragraph"><p>Brian Street (<a href="https://github.com/ItGumby"><i class="fa fa-github"></i>ItGumby</a> <a href="https://twitter.com/ItGumby"><i class="fa fa-twitter"></i>ItGumby</a>)</p></div>
+
+<div class="ulist">
+<ul>
+<li>Full Stack Developer on <a href="http://twc.com">http://twc.com</a> (Alexa Top 3000)</li>
+<li>flexible engineer with a passion for automation</li>
+<li>other tech interests: ETL, Databases, (Automated) QA, and Motion Control/robotics</li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_introduction_summary">
+<h2>Introduction: Summary</h2>
+<div class="paragraph"><p>Collectively, we work on a development team with more contractors than employees.</p></div>
+
+<div class="paragraph"><p>We have had to &#8220;spin-up&#8221; quite a few people.</p></div>
+
+<div class="paragraph"><p>We also had a batch of hot new laptops for some employees&#8230;</p></div>
+</section>
+
+<section class="slide" id="_why_boxen_consistency_repeatability">
+<h2>Why Boxen: Consistency &amp; Repeatability</h2>
+<div class="ulist">
+<ul>
+<li>No more &#8220;follow the steps on the wiki at &#8230;&#8221;</li>
+<li>Remove manual steps</li>
+<li>configure your dev environment</li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_why_boxen_faster">
+<h2>Why Boxen: Faster</h2>
+<div class="ulist">
+<ul>
+<li>Small tax on initial customizations</li>
+<li>Graceful iterative customizations</li>
+<li>Pays back the FIRST time it is re-used</li>
+<li>Install apps AND configure them (including a lot of the settings that normally require manual changes)</li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_why_boxen_cool">
+<h2>Why Boxen: Cool</h2>
+<div class="ulist">
+<ul>
+<li>A tool meant for developers/power-users</li>
+<li><p>
+<strong>Reinforce DevOps mantra &#8220;infrastructure is code&#8221;</strong><div class="ulist">
+<ul>
+<li>Everything is versionable (thus rollbacks) and diff-able</li>
+<li>Differences between environments can easily be handled</li>
+</ul>
+</div></p></li>
+<li>Apply server configuration software to your desktop</li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_why_boxen_desktops_are_special">
+<h2>Why Boxen: Desktops are &#8220;Special&#8221;</h2>
+<div class="paragraph"><p><strong>How do you automate software installation on a Mac (or any &#8220;desktop&#8221; OS)?</strong></p></div>
+
+<div class="ulist">
+<ul>
+<li>Lack of exposed software versioning</li>
+<li>Installation assumes single user</li>
+<li>Installation assumes a GUI</li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_requirements">
+<h2>Requirements</h2>
+<div class="ulist">
+<ul>
+<li>Mac OS X 10.8+ only. (<span class="small">Call To Action:</span> pull-requests for other platforms)</li>
+<li>XCode CLI (slightly tricky pre-Mavericks)</li>
+<li>accessible source urls <em>(e.g., Oracle JDK&#8217;s licensing limits this)</em></li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_primary_components">
+<h2>Primary Components</h2>
+<table class="tableblock frame-all grid-all" style="width:100%">
+<colgroup>
+<col style="width:20%">
+<col style="width:80%">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>GitHub</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>version control and user management</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Puppet</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>system configuration</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Puppet Librarian</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>module management for Puppet</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Homebrew</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>provides &#8220;most&#8221; of the software</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Ruby</strong> (rbenv)</p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>most of the scripting</p></div>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<section class="slide" id="_software_package_providers">
+<h2>Software Package Providers</h2>
+<div class="paragraph"><p>There are many &#8220;<strong>providers</strong>&#8221; of software. Some examples:</p></div>
+
+<table class="tableblock frame-all grid-all" style="width:100%">
+<colgroup>
+<col style="width:20%">
+<col style="width:80%">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Provider</th>
+<th class="tableblock halign-left valign-top">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>homebrew</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>the default for Boxen, it&#8217;s one of the most fully capable</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>appdmg</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>if *.dmg contains *.app to drag into /Applications</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>appdmg_eula</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>if *.dmg asks for a license agreement when it is opened and contains *.app to drag into /Applications</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>pkgdmg</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>if *.pkg contains installer</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>compressed_app</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>if *.zip to unzip &amp; place into /Applications</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>macports</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>supported, but doesn&#8217;t always play well with <strong>homebrew</strong></p></div>
+</div></td>
+</tr>
+</tbody>
+</table>
+
+<div class="paragraph"><p>Other sources include <code>gem</code>, <code>npm</code>, <code>pip</code>, &#8230;</p></div>
+</section>
+
+<section class="slide" id="_provider_features">
+<h2>Provider Features</h2>
+<div class="paragraph"><p>The OS X packaging providers are, in general, incredibly &#8220;limited&#8221;.  By definition, providers install software.  Some can do more:</p></div>
+
+<table class="tableblock frame-all grid-all" style="width:100%">
+<colgroup>
+<col style="width:25%">
+<col style="width:25%">
+<col style="width:25%">
+<col style="width:25%">
+</colgroup>
+<thead>
+<tr>
+<th class="tableblock halign-left valign-top">Provider</th>
+<th class="tableblock halign-left valign-top">Uninstall</th>
+<th class="tableblock halign-left valign-top">Versionable</th>
+<th class="tableblock halign-left valign-top">Updatable</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">appdmg</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">appdmg_eula</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">compressed_app</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><i class="fa fa-check-circle"></i></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">compressed_pkg</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">homebrew</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><i class="fa fa-check-circle"></i></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><i class="fa fa-check-circle"></i></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><i class="fa fa-check-circle"></i></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">macports</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><i class="fa fa-check-circle"></i></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><i class="fa fa-check-circle"></i></p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock"><i class="fa fa-check-circle"></i></p></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><p class="tableblock">pkgdmg</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+<td class="tableblock halign-left valign-top"><p class="tableblock">&nbsp;</p></td>
+</tr>
+</tbody>
+</table>
+
+<div class="paragraph"><p>Providers (other than <code>homebrew</code> &amp; <code>macports</code>) track package installation at <code>/var/db/.puppet_{provider}_installed_{package_name}</code></p></div>
+
+<div class="paragraph"><p>Therefore, to re-install, you must <strong>delete</strong> the file above before running boxen again.</p></div>
+</section>
+
+<section class="slide" id="_boxen_limitations">
+<h2>Boxen Limitations</h2>
+<div class="paragraph"><p>The <strong>primary</strong> limitation is that it&#8217;s not (yet?) able to install software from the Apple App Store.</p></div>
+
+<div class="paragraph"><p>Otherwise install and configure your entire system automatically without manual steps.  The time cost is primarily download time.</p></div>
+</section>
+
+<section class="slide" id="_getting_started_the_bootstrap">
+<h2>Getting Started: The Bootstrap</h2>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="shell language-shell">sudo mkdir -p /opt/boxen
+sudo chown ${USER}:staff /opt/boxen
+git clone [your_boxen_repo] /opt/boxen/repo
+cd /opt/boxen/repo
+./script/boxen [--no-fde]<i class="conum" data-value="1"></i><b>(1)</b></code></pre>
+</div>
+</div>
+
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>defaults to Full Disk Encryption</td>
+</tr>
+</table>
+</div>
+
+<section class="slide" id="_alternate_boxen_web">
+<h2>Alternate: Boxen Web</h2>
+<div class="ulist">
+<ul>
+<li><p>
+<a href="https://boxen.github.com/">boxen-web</a><div class="ulist">
+<ul>
+<li>uses heroku to provide customized homepage &amp; OAuth</li>
+</ul>
+</div></p></li>
+</ul>
+</div>
+</section>
+</section>
+
+<section class="slide" id="_getting_started_customize_iterate">
+<h2>Getting Started: Customize &amp; Iterate</h2>
+<div class="ulist">
+<ul>
+<li><p>
+Edit<div class="ulist">
+<ul>
+<li>modules</li>
+<li>packages</li>
+<li>people</li>
+<li>&#8230;</li>
+</ul>
+</div></p></li>
+<li>re-run <code>/opt/boxen/script/boxen</code></li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_puppet_terms_basic_structure">
+<h2>Puppet Terms: Basic Structure</h2>
+<div class="paragraph"><p><span class="small">(Highly, highly simplified)</span></p></div>
+
+<table class="tableblock frame-all grid-all" style="width:100%">
+<colgroup>
+<col style="width:20%">
+<col style="width:80%">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Module</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Effectively Puppet&#8217;s &#8220;library&#8221; unit</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Manifest</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>The file containing the description/script</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Resource</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>A unit of configuration ( e.g., &#8220;file&#8221;, &#8220;package&#8221; )</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Class</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>A singleton managing Resources</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Defined Type</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Can have more than one instance managing Resources</p></div>
+</div></td>
+</tr>
+</tbody>
+</table>
+
+<div class="paragraph"><p><a href="http://docs.puppetlabs.com/references/glossary.html">Puppet Glossary</a></p></div>
+
+<div class="paragraph"><p>In general, &#8220;Module&#8221; has at least one &#8220;Manifest&#8221; which has at least one &#8220;Class&#8221;</p></div>
+</section>
+
+<section class="slide" id="_puppet_terms_resources">
+<h2>Puppet Terms: Resources</h2>
+<div class="paragraph"><p>Every resource has:</p></div>
+
+<div class="ulist">
+<ul>
+<li>Type (such as <code>package</code>, <code>file</code>, <code>exec</code>, &#8230;)</li>
+<li>Title</li>
+<li><p>
+&gt;1 attributes<div class="ulist">
+<ul>
+<li>e.g., an &#8220;ensure&#8221; attribute with a value of &#8220;present&#8221;</li>
+</ul>
+</div></p></li>
+</ul>
+</div>
+
+<div class="paragraph"><p>Resources can (and often do) depend on other resources. Puppet will build a dependency graph to make sure everything is applied in the correct order. Each resource title must be unique in the DAG.</p></div>
+</section>
+
+<section class="slide" id="_puppet_terms_misc">
+<h2>Puppet Terms: Misc</h2>
+<table class="tableblock frame-all grid-all" style="width:100%">
+<colgroup>
+<col style="width:20%">
+<col style="width:80%">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Facts</strong> (Facter)</p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Descrete information about the machine (FQDN, IP addr, OS, etc.) gathered by &#8220;facter&#8221;</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Puppet Librarian</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Used for managing Puppet Modules</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Hiera</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Hiera</strong>rchical data: a flexible way of providing configuration data based on &#8220;facts&#8221;</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Profiles &amp; Roles</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Not covered here, but a Puppet Enterprise convention for organizing Hiera data</p></div>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<section class="slide" id="_boxen_terms">
+<h2>Boxen Terms</h2>
+<table class="tableblock frame-all grid-all" style="width:100%">
+<colgroup>
+<col style="width:20%">
+<col style="width:80%">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>User</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>Defined by the &#8220;fact&#8221;: <code>::boxen_user</code></p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><strong>Project</strong></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>A grouping meant for &#8220;make sure people on this team have at least this configuration&#8221;; you can have multiple &#8220;projects&#8221; applied to a machine</p></div>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<section class="slide" id="_packages">
+<h2>Packages</h2>
+<div class="paragraph"><p>Packages are the primary way software is installed. <a href="http://docs.puppetlabs.com/references/latest/type.html#package"><i class="fa fa-external-link"></i></a></p></div>
+
+<div class="paragraph"><p>Simple example:</p></div>
+
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">package { 'gradle':
+    ensure   =&gt; "installed",<i class="conum" data-value="1"></i><b>(1)</b>
+    provider =&gt; "homebrew",
+}
+
+package { "IntelliJ-IC-12.1.4":
+    provider =&gt; 'appdmg_eula',
+    source   =&gt; "http://download.jetbrains.com/idea/ideaIC-12.1.4.dmg",
+}</code></pre>
+</div>
+</div>
+
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>typically defaults to &#8220;present&#8221;. Valid values vary by resource type &amp; provider.  May include <code>installed</code>, <code>latest</code>, <code>absent</code>, or a specific version/version range (e.g., <code>"&gt;= 1.12"</code>)</td>
+</tr>
+</table>
+</div>
+</section>
+
+<section class="slide" id="_other_resources_file">
+<h2>Other Resources: File</h2>
+<div class="paragraph"><p><a href="http://docs.puppetlabs.com/references/latest/type.html#file">Puppet File Documentation<i class="fa fa-external-link"></i></a></p></div>
+
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">$home = "/Users/${::boxen_user}"<i class="conum" data-value="1"></i><b>(1)</b>
+
+file { "${home}/.zshrc":
+  source =&gt; 'puppet:///modules/people/jdigger/zshrc',<i class="conum" data-value="2"></i><b>(2)</b>
+}
+
+file { "${home}/.zshenv":
+  content =&gt; template('people/jdigger/zshenv.erb'),<i class="conum" data-value="3"></i><b>(3)</b>
+}</code></pre>
+</div>
+</div>
+
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>define a variable based on a &#8220;fact&#8221;</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>a static file from a module</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>set the content from a template (Ruby ERB by default)</td>
+</tr>
+</table>
+</div>
+</section>
+
+<section class="slide" id="_other_resources_repository">
+<h2>Other Resources: Repository</h2>
+<div class="paragraph"><p><a href="https://github.com/boxen/puppet-repository">GitHub Repository<i class="fa fa-external-link"></i></a></p></div>
+
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">$home = "/Users/${::boxen_user}"
+$srcdir = "${home}/src"
+
+repository { "${srcdir}/git-process" :
+  source   =&gt; 'https://github.com/jdigger/git-process.git',
+  path     =&gt; "${srcdir}/git-process",
+  provider =&gt; 'git',
+}</code></pre>
+</div>
+</div>
+</section>
+
+<section class="slide" id="_other_resources_ruby_gem">
+<h2>Other Resources: Ruby Gem</h2>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">$ruby_version = '1.9.3'
+
+ruby::gem { "git-process for ${ruby_version}":<i class="conum" data-value="1"></i><b>(1)</b>
+    gem     =&gt; 'git-process',
+    ruby    =&gt; $ruby_version,<i class="conum" data-value="2"></i><b>(2)</b>
+    version =&gt; '~&gt; 2.0',<i class="conum" data-value="3"></i><b>(3)</b>
+}</code></pre>
+</div>
+</div>
+
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>because there could be potentially more than one installation of the gem (in the various rbenv versions) it&#8217;s a good idea to put the Ruby version in the resource name so it is guaranteed to be unique</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>the version of Ruby (using rbenv) to install the gem into</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>of course gem versions can use the semantic versioning support of Ruby Gems</td>
+</tr>
+</table>
+</div>
+</section>
+
+<section class="slide" id="_other_resources_plist">
+<h2>Other Resources: Plist</h2>
+<div class="listingblock">
+<div class="title">example of configuring Adium</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">property_list_key { 'Adium users':
+  path       =&gt; "${home}/Library/Application Support/Adium 2.0/Users/Default/Accounts.plist",
+  key        =&gt; 'Accounts',
+  value      =&gt; [
+    {
+      'Service'  =&gt; 'GTalk',
+      'UID'      =&gt; $gtalk_name,
+      'Type'     =&gt; 'libpurple-jabber-gtalk',
+      'ObjectID' =&gt; '1',
+    },
+    {
+      'Service'  =&gt; 'Yahoo!',
+      'UID'      =&gt; $yahoo_name,
+      'Type'     =&gt; 'libpurple-Yahoo!',
+      'ObjectID' =&gt; '2',
+    },
+    {
+      'Service'  =&gt; 'AIM',
+      'UID'      =&gt; $aim_name,
+      'Type'     =&gt; 'libpurple-oscar-AIM',
+      'ObjectID' =&gt; '3',
+    },
+  ],
+  value_type =&gt; 'array',
+}</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p>Requires the <a href="https://github.com/glarizza/puppet-property_list_key">&#8220;glarizza/puppet-property_list_key&#8221; module</a></p></div>
+
+<div class="paragraph"><p>See the <a href="https://developer.apple.com/librarY/mac/documentation/Darwin/Reference/ManPages/man1/plutil.1.html">plutil man page</a>.</p></div>
+</section>
+
+<section class="slide" id="_other_resources_osx">
+<h2>Other Resources: OSX</h2>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">boxen::osx_defaults { 'scrollbars always on':
+  domain =&gt; 'NSGlobalDomain',
+  key    =&gt; 'AppleShowScrollBars',
+  value  =&gt; 'Always',
+  user   =&gt; $::boxen_user,
+}
+osx::recovery_message { 'If this Mac is found, please call 555-555-5555': }
+include osx::finder::unhide_library</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p>See the <a href="https://developer.apple.com/library/mac/documentation/Darwin/Reference/ManPages/man1/defaults.1.html">defaults man page</a>.</p></div>
+
+<div class="paragraph"><p>An awesome list of available settings/tools can be found at <a href="https://github.com/kevinSuttle/OSXDefaults">OSXDefaults</a>.</p></div>
+</section>
+
+<section class="slide" id="_other_resources_exec">
+<h2>Other Resources: Exec</h2>
+<div class="paragraph"><p><a href="http://docs.puppetlabs.com/references/latest/type.html#exec">Puppet Exec Documentation<i class="fa fa-external-link"></i></a></p></div>
+
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">$source_tgz =
+    'http://closure-linter.googlecode.com/files/closure_linter-latest.tar.gz'<i class="conum" data-value="1"></i><b>(1)</b>
+
+exec { 'install gjslint':<i class="conum" data-value="2"></i><b>(2)</b>
+    command =&gt; "easy_install ${source_tgz}",
+    user    =&gt; 'root',<i class="conum" data-value="3"></i><b>(3)</b>
+    creates =&gt; '/usr/local/bin/gjslint',<i class="conum" data-value="4"></i><b>(4)</b>
+}</code></pre>
+</div>
+</div>
+
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>should come in as part of a class definition&#8230;</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>arbitrary resource name: if &#8220;command&#8221; not given, this is used, but generally best to give it a &#8220;meaningful&#8221; name</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>the user to <code>sudo</code> as when executing the command</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>before running the command the existence of this file is checked; if it&#8217;s there it&#8217;s assume this has already run</td>
+</tr>
+</table>
+</div>
+
+<div class="paragraph"><p>Instead of &#8220;creates&#8221;, you can use &#8220;onlyif&#8221;/&#8220;unless&#8221; to run a command, such as</p></div>
+
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">unless =&gt; 'grep root /usr/lib/cron/cron.allow 2&gt;/dev/null'</code></pre>
+</div>
+</div>
+</section>
+
+<section class="slide" id="_defining_classes">
+<h2>Defining Classes</h2>
+<div class="paragraph"><p>The <strong>primary</strong> way of referencing groups of Resources is via Classes.</p></div>
+
+<div class="paragraph"><p>A Class may take parameters for configuration.</p></div>
+
+<div class="listingblock">
+<div class="title">from puppet-intellij (slide-ware version)</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">class intellij($edition='community', $version='13.1.1') {
+  case $edition {
+    'community': { $edition_real = 'IC' }
+    'ultimate': { $edition_real = 'IU' }
+    default: { fail('Class[intellij]: parameter edition must be community or ultimate') }
+  }
+
+  package { "IntelliJ-IDEA-${edition_real}-${version}":
+    provider =&gt; 'appdmg_eula',
+    source   =&gt; "http://download.jetbrains.com/idea/idea${edition_real}-${version}.dmg",
+  }
+}</code></pre>
+</div>
+</div>
+</section>
+
+<section class="slide" id="_defining_classes_annotated">
+<h2>Defining Classes (annotated)</h2>
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">class intellij($edition='community', $version='13.1.1') {
+  case $edition { <i class="conum" data-value="1"></i><b>(1)</b>
+    'community': { $edition_real = 'IC' }
+    'ultimate': { $edition_real = 'IU' }
+    default: { fail('Class[intellij]: parameter edition must be community or ultimate') } <i class="conum" data-value="2"></i><b>(2)</b>
+  }
+
+  package { "IntelliJ-IDEA-${edition_real}-${version}": <i class="conum" data-value="3"></i><b>(3)</b>
+    provider =&gt; 'appdmg_eula', <i class="conum" data-value="4"></i><b>(4)</b>
+    source   =&gt; "http://download.jetbrains.com/idea/idea${edition_real}-${version}.dmg", <i class="conum" data-value="5"></i><b>(5)</b>
+  }
+}</code></pre>
+</div>
+</div>
+
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>Conditionals for setting "private" variable</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>Able to fail the configuration before anything is applied</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>Variable substitution. (Resource names must be unique)</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>Install from .dmg, auto-accepting the EULA</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="5"></i><b>5</b></td>
+<td>Where to download the installation package from</td>
+</tr>
+</table>
+</div>
+</section>
+
+<section class="slide" id="_calling_classes">
+<h2>Calling Classes</h2>
+<div class="listingblock">
+<div class="title">Explicitly calling with parameters</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">class { "intellij":
+    edition =&gt; 'community',
+    version =&gt; '13.1.1',
+}</code></pre>
+</div>
+</div>
+
+<div class="listingblock">
+<div class="title">Calling with default parameters</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">class { "intellij": }</code></pre>
+</div>
+</div>
+
+<div class="listingblock">
+<div class="title">Importing with default parameters</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">import "intellij"</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p><span class="fa-stack pull-left tip"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-key fa-stack-1x fa-inverse"></i></span> The <code>import</code> form has the advantage over <code>class {:}</code> in that <code>class {:}</code> can only appear once in your entire graph. <code>import</code> will add the class resource if it&#8217;s not yet defined, or ignore it if not.</p></div>
+</section>
+
+<section class="slide" id="_calling_classes_with_hiera">
+<h2>Calling Classes with Hiera</h2>
+<div class="paragraph"><p>Want simple resource declarations <strong>AND</strong> centralized/powerful configuration data (like versions)? That&#8217;s what <a href="http://docs.puppetlabs.com/hiera/1/complete_example.html">Hiera</a> is for&#8230; <i class="fa fa-magic"></i></p></div>
+
+<div class="listingblock">
+<div class="title">Importing with parameter lookup</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">import "intellij"</code></pre>
+</div>
+</div>
+
+<div class="listingblock">
+<div class="title">Hiera YAML configuration</div>
+<div class="content">
+<pre class="highlight"><code class="yaml language-yaml">intellij::edition: 'ultimate'
+intellij::version: '13.1.2'</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p>Separates usage from configuration</p></div>
+</section>
+
+<section class="slide" id="_defined_types">
+<h2>Defined Types</h2>
+<div class="paragraph"><p>Defined Types are similar to Classes, providing scoping, resource management, ability to pass in parameters, etc.</p></div>
+
+<div class="paragraph"><p>Unlike Classes, you can have multiple instances. Because of that, you can&#8217;t use <code>include</code> or tools like Hiera to configure them.</p></div>
+
+<div class="listingblock">
+<div class="title">from the <code>boxen/puppet-sublime_text_2</code> modules</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">define sublime_text_2::package($source) {
+  require sublime_text_2::config
+
+  repository { "${sublime_text_2::config::packagedir}/${name}":
+    source =&gt; $source
+  }
+}</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p><span class="fa-stack pull-left tip"><i class="fa fa-circle fa-stack-2x"></i><i class="fa fa-key fa-stack-1x fa-inverse"></i></span> If you&#8217;re trying to decide between declaring something <code>class</code> or <code>define</code>, err toward <code>class</code></p></div>
+</section>
+
+<section class="slide" id="_resource_defaults">
+<h2>Resource Defaults</h2>
+<div class="listingblock">
+<div class="title">repo/manifests/site.pp (simplified)</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">exec {
+  group =&gt; 'staff',
+  user  =&gt; $boxen_user,
+  path  =&gt; [
+    "${boxen::config::home}/rbenv/shims",
+    "${boxen::config::home}/rbenv/bin",
+    "${boxen::config::home}/homebrew/bin",
+    '/usr/bin', '/bin', '/usr/sbin', '/sbin',
+  ],
+}
+
+File {
+  group =&gt; 'staff',
+  owner =&gt; $boxen_user,
+}
+
+Package {
+  provider =&gt; homebrew,
+}
+
+Repository {
+  provider =&gt; git,
+}
+
+Service {
+  provider =&gt; ghlaunchd,
+}</code></pre>
+</div>
+</div>
+</section>
+
+<section class="slide" id="_brief_structure">
+<h2>Brief Structure</h2>
+<div class="paragraph"><p>Boxen default installation at <code>/opt/boxen</code></p></div>
+
+<div class="paragraph"><p>All user edits to the <code>repo</code> subdirectory (<code>/opt/boxen/repo/</code>)</p></div>
+</section>
+
+<section class="slide" id="_editing_code_opt_boxen_repo_code">
+<h2>Editing <code>/opt/boxen/repo</code></h2>
+<div class="paragraph"><p>Ordered roughly by likelihood that you&#8217;ll modify something.</p></div>
+
+<table class="tableblock frame-all grid-all" style="width:100%">
+<colgroup>
+<col style="width:20%">
+<col style="width:80%">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>modules/</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>the Puppet &#8220;modules&#8221; to load; <strong>most customization happens here</strong></p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>modules/people</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>contains the module associated with a specific person <i class="fa fa-user"></i></p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>Puppetfile</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>control file for Puppet Librarian <i class="fa fa-cloud-download"></i></p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>hiera/</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>data-based configuration <i class="fa fa-sitemap fa-rotate-180"></i></p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>modules/projects</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>contains the module associated with projects <i class="fa fa-users"></i></p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>manifests/site.pp</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>sets the defaults for the loaded modules</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>config/</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>contains some files for tweeking more advanced features</p></div>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<section class="slide" id="_parts_to_avoid_editing_in_code_opt_boxen_repo_code">
+<h2>Parts to Avoid Editing in <code>/opt/boxen/repo</code></h2>
+<div class="paragraph"><p>Directories you should not directly interact with:</p></div>
+
+<table class="tableblock frame-all grid-all" style="width:100%">
+<colgroup>
+<col style="width:20%">
+<col style="width:80%">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>script/</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>contains the primary scripts, including <code>boxen</code> itself <i class="fa fa-keyboard-o"></i></p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>shared/</code>, <code>vendor/</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>cache for Librarian modules</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>bin/</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>the shims for installed Ruby Gems, including Puppet</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>../</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>where Boxen installs a lot of its other control files</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>*.lock</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>control files for version locking <i class="fa fa-lock"></i></p></div>
+</div></td>
+</tr>
+</tbody>
+</table>
+
+<div class="paragraph"><p><i class="fa fa-exclamation-triangle"></i> The *.lock files are great when you understand them, and generally stay out of your way even when you don&#8217;t. But they can be a bit of a pain when you merge in remote changes to the project&#8230; See <a href="https://github.com/boxen/our-boxen/blob/master/docs/faq.md">the FAQ</a>.</p></div>
+</section>
+
+<section class="slide" id="_boxen_user_edits">
+<h2>Boxen User Edits</h2>
+<div class="paragraph"><p>Directory: <code>/opt/boxen/repo/modules/people</code></p></div>
+
+<div class="paragraph"><p>By default {user} is based on your GitHub user ID.  However, you can leverage parts and pieces from other users.</p></div>
+
+<table class="tableblock frame-all grid-all" style="width:100%">
+<colgroup>
+<col style="width:20%">
+<col style="width:80%">
+</colgroup>
+<tbody>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>manifests/{user}.pp</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>primary manifest for a user</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>manifests/{user}/</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>where your &#8220;subclasses&#8221; go</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>files/{user}/</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>static resources for the user</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>templates/{user}/</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>templatized resources for the user</p></div>
+</div></td>
+</tr>
+<tr>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p><code>spec/</code></p></div>
+</div></td>
+<td class="tableblock halign-left valign-top"><div><div class="paragraph"><p>unit tests for the manifests</p></div>
+</div></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+<section class="slide" id="_example_user_manifest">
+<h2>Example User Manifest</h2>
+<div class="listingblock">
+<div class="title">modules/people/jdigger.pp</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">class people::jdigger {
+    include people::jdigger::dotfiles
+    include people::jdigger::bin
+    include people::jdigger::applications
+    include people::jdigger::ruby
+    include people::jdigger::git
+    include people::jdigger::sublime_text_2
+    include people::jdigger::osx
+}</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p>Just as it&#8217;s good practice in OOD to delegate low-level details to subclasses, you should do the same in Puppet class design as well.</p></div>
+</section>
+
+<section class="slide" id="_example_sub_class">
+<h2>Example &#8220;Sub Class&#8221;</h2>
+<div class="listingblock">
+<div class="title">modules/people/jdigger/sublime_text_2.pp</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">class people::jdigger::sublime_text_2 {
+  include 'sublime_text_2'<i class="conum" data-value="1"></i><b>(1)</b>
+
+  $home = "/Users/${::boxen_user}"
+
+  file { "${home}/Library/Application Support/Sublime Text 2/Packages/User":
+    ensure =&gt; 'directory',
+    owner  =&gt; $::boxen_user,
+    mode   =&gt; '0755',
+  } <i class="conum" data-value="2"></i><b>(2)</b>
+  -&gt; <i class="conum" data-value="3"></i><b>(3)</b>
+  file { "${home}/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings":
+    source  =&gt; 'puppet:///modules/people/jdigger/sublime-settings',
+  } <i class="conum" data-value="4"></i><b>(4)</b>
+}</code></pre>
+</div>
+</div>
+
+<div class="colist arabic">
+<table>
+<tr>
+<td><i class="conum" data-value="1"></i><b>1</b></td>
+<td>make use of the &#8220;general&#8221; <code>sublime_text_2</code> module</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="2"></i><b>2</b></td>
+<td>ensure that the user preferences directory exists</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="3"></i><b>3</b></td>
+<td>shorthand to declare that the following resource needs the previous one to be applied first</td>
+</tr>
+<tr>
+<td><i class="conum" data-value="4"></i><b>4</b></td>
+<td>I want Sublime Text 2 to behave the same for me regardless of what machine I&#8217;m on, so any changes I make to the settings are done in the module</td>
+</tr>
+</table>
+</div>
+</section>
+
+<section class="slide" id="_puppet_librarian_puppetfile">
+<h2>Puppet Librarian: Puppetfile</h2>
+<div class="paragraph"><p><a href="https://github.com/rodjek/librarian-puppet">Puppet Librarian usage/syntax <i class="fa fa-external-link"></i></a></p></div>
+
+<div class="listingblock">
+<div class="title">some standard entries</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">github "dnsmasq",  "1.0.1"
+github "gcc",      "2.0.100"
+github "git",      "2.3.0"
+github "homebrew", "1.6.2"</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p>Where <code>github</code> is a function that translates</p></div>
+
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">github "git", "2.3.0"</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p>to</p></div>
+
+<div class="listingblock">
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">mod "git", "2.3.0", :github_tarball =&gt; "boxen/puppet-git"</code></pre>
+</div>
+</div>
+</section>
+
+<section class="slide" id="_puppet_librarian_finding_modules">
+<h2>Puppet Librarian: Finding Modules</h2>
+<div class="paragraph"><p><a href="https://github.com/boxen?query=puppet-">Search for Module Names <i class="fa fa-external-link"></i></a></p></div>
+
+<div class="imageblock">
+<div class="content">
+<a class="image" href="https://github.com/boxen/puppet-intellij">
+<img alt="boxen puppet intellij releases tab" src="./images/boxen_puppet-intellij_releases_tab.png">
+</a>
+</div>
+</div>
+
+<div class="imageblock">
+<div class="content">
+<a class="image" href="https://github.com/boxen/puppet-intellij/releases">
+<img alt="releases boxen puppet intellij" src="./images/releases-boxen_puppet-intellij.png">
+</a>
+</div>
+</div>
+</section>
+
+<section class="slide" id="_boxen_facter_extensions">
+<h2>Boxen Facter Extensions</h2>
+<div class="listingblock">
+<div class="title">snippet from shared/lib/facter/boxen.rb</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">dot_boxen   = "#{ENV['HOME']}/.boxen"
+user_config = "#{dot_boxen}/config.json"
+
+require "boxen/config"
+config = Boxen::Config.load
+
+facts["github_login"]  = config.login
+facts["github_email"]  = config.email
+facts["github_name"]   = config.name
+facts["github_token"]  = config.token
+
+facts["boxen_home"]     = config.homedir
+facts["boxen_srcdir"]   = config.srcdir
+facts["boxen_repodir"]  = config.repodir
+facts["boxen_reponame"] = config.reponame
+facts["boxen_user"]     = config.user
+#..</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p>The &#8220;cached&#8221; values for those are in <code>/opt/boxen/config/boxen/defaults.json</code></p></div>
+
+<div class="paragraph"><p>You can set your own personal/private custom Facts in <code>~/.boxen/config.json</code></p></div>
+</section>
+
+<section class="slide" id="_use_case_private_vs_personal">
+<h2>Use Case: Private vs Personal</h2>
+<div class="paragraph"><p>Typical personal configuration goes in <code>modules/${::github_login}</code>, which is <strong>public</strong> to a boxen repo. This is generally <a href="http://zachholman.com/2010/08/dotfiles-are-meant-to-be-forked/">a <strong>very</strong> good thing</a>.</p></div>
+
+<div class="paragraph"><p><i class="fa fa-exclamation-triangle"></i>However, some facts do not belong in a public location (Passwords, SSH keys, OAuth tokens, etc.)<i class="fa fa-exclamation-triangle"></i></p></div>
+
+<div class="paragraph"><p>For configuration that can easily be turned into &#8220;data&#8221;&#8201;&#8212;&#8201;especially if it would be used in multiple places when configuring the system (e.g., user names and passwords)&#8201;&#8212;&#8201;the <code>~/.boxen/config.json</code> file is perfect.</p></div>
+
+<div class="paragraph"><p>For configuration that&#8217;s more complex, like your <code>~/.ssh</code> directory, create a private <a href="https://bitbucket.org/">BitBucket repository</a>, or encrypted .zip in Dropbox, or &#8230;</p></div>
+
+<div class="paragraph"><p>Keep it <strong>simple</strong> and secure: You want it to be easily accessible before the rest of your system is set up.</p></div>
+</section>
+
+<section class="slide" id="_tips_general">
+<h2>Tips: General</h2>
+<div class="ulist">
+<ul>
+<li>Use the <code>--noop</code> option</li>
+<li><strong>Don&#8217;t install/configure your machine except via Boxen</strong> (this is a culture shift, but worth it)</li>
+<li>The <code>--debug</code> output has a wealth of information, but can be overwealming</li>
+<li>Don&#8217;t forget it&#8217;s all code and backed by git: use the forking and branching processes you normally would</li>
+<li>Design your classes using parameters and facts, keeping Hiera in mind</li>
+<li>Especially if you&#8217;re creating modules &#8220;for realz&#8221; (or are just suitably paranoid), run in a VM: <a href="http://thezinx.com/2013/10/29/create-bootable-dmg-iso-mavericks-app.html">Creating an ISO</a></li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_tips_infrastructure_as_code">
+<h2>Tips: Infrastructure As Code</h2>
+<div class="paragraph"><p><strong>Don&#8217;t forget it&#8217;s all code and backed by git</strong></p></div>
+
+<div class="paragraph"><p>Use the forking and branching processes you normally would</p></div>
+
+<div class="listingblock">
+<div class="title">merge with the upstream (e.g., <code>boxen/our-boxen</code>) often</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">git remote add boxen https://github.com/boxen/our-boxen.git
+git fetch --all
+git merge boxen/master</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p><i class="fa fa-exclamation-triangle"></i> When you get merge conflicts on <code>*.lock</code> files, <a href="https://github.com/boxen/our-boxen/blob/master/docs/faq.md">see the FAQ</a></p></div>
+
+<div class="paragraph"><p>Make use of other people&#8217;s modules, and post your own!</p></div>
+</section>
+
+<section class="slide" id="_tips_re_use_by_module">
+<h2>Tips: Re-use by Module</h2>
+<div class="paragraph"><p>Create <code>modules/packages/</code> for general-purpose Puppet classes to share across users or projects</p></div>
+
+<div class="paragraph"><p><strong>Publish useful packages.</strong> OSS benefits all, and the &#8220;packages&#8221; module and its like should be considered temporary/stop-gap.</p></div>
+
+<div class="paragraph"><p>This also works well for &#8220;proprietary&#8221; software/configurations (though those may be published on an internal repo instead of a public one).</p></div>
+</section>
+
+<section class="slide" id="_tips_avoid_node_default">
+<h2>Tips: Avoid &#8216;node default&#8217;</h2>
+<div class="paragraph"><p>The default <code>repo/manifests/site.pp</code> contains a <code>node default</code> section that will get loaded up on every machine. There&#8217;s two problems with it:</p></div>
+
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+The &#8220;out of the box&#8221; list contains a bunch of stuff that non-GitHub.com people may or may not care about having loaded up on their machine (e.g. NodeJS, ngnix, 4 versions of Ruby)
+</li>
+<li>
+<code>node default</code> doesn&#8217;t allow changing configuration values, etc.
+</li>
+</ol>
+</div>
+
+<div class="paragraph"><p>It&#8217;s a legacy of Puppet 1.0, long before much more flexible mechanisms like Hiera.</p></div>
+</section>
+
+<section class="slide" id="_tips_use_hiera">
+<h2>Tips: Use Hiera</h2>
+<div class="paragraph"><p>A much better approach</p></div>
+
+<div class="listingblock">
+<div class="title">replace &#8216;node default&#8217; in &#8216;site.pp&#8217; with</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">if hiera_array('classes', undef) {
+  hiera_include('classes')
+}</code></pre>
+</div>
+</div>
+
+<div class="paragraph"><p>Then, if you want to make sure everyone&#8217;s got Ruby set up&#8230;</p></div>
+
+<div class="listingblock">
+<div class="title">hiera/common.yaml</div>
+<div class="content">
+<pre class="highlight"><code class="yaml language-yaml">classes:
+  - ruby::global
+ruby::global::version: "2.1.1"
+ruby::rbenv_plugins:
+  ruby-build:
+    ensure: v20140420
+    source: sstephenson/ruby-build</code></pre>
+</div>
+</div>
+</section>
+
+<section class="slide" id="_tips_hiera_power">
+<h2>Tips: Hiera Power</h2>
+<div class="paragraph"><p>With <a href="https://github.com/jdigger/boxen/blob/d5502c936d5d7aaa0212a6d2fb00f2d0d6be4c70/modules/packages/manifests/sublime_text_2_package_management.pp">a simple shim</a> you can do things like this:</p></div>
+
+<div class="listingblock">
+<div class="title">hiera/developer.yaml</div>
+<div class="content">
+<pre class="highlight"><code class="yaml language-yaml">sublime_text_2::packages:
+  'BracketHighlighter':
+    source: 'facelessuser/BracketHighlighter'
+  'CodeIntel':
+    source: 'SublimeCodeIntel/SublimeCodeIntel'
+  'Git':
+    source: 'kemayo/sublime-text-git'
+  'GitGutter':
+    source: 'jisaacks/GitGutter'</code></pre>
+</div>
+</div>
+
+<div class="listingblock">
+<div class="title">hiera/users/jdigger.yaml</div>
+<div class="content">
+<pre class="highlight"><code class="yaml language-yaml">sublime_text_2::packages:
+  'AsciiDoc':
+    source: 'SublimeText/AsciiDoc'
+  'Markdown-Preview':
+    source: 'revolunet/sublimetext-markdown-preview'
+  'PrettyJson':
+    source: 'dzhibas/SublimePrettyJson'
+  'Puppet':
+    source: 'russCloak/SublimePuppet'</code></pre>
+</div>
+</div>
+</section>
+
+<section class="slide" id="_tips_hiera_structure">
+<h2>Tips: Hiera Structure</h2>
+<div class="paragraph"><p>For example:</p></div>
+
+<div class="listingblock">
+<div class="title">repo/config/hiera.yaml</div>
+<div class="content">
+<pre class="highlight"><code class="yaml language-yaml">---
+:merge_behavior: deeper
+:backends:
+  - yaml
+:yaml:
+  :datadir: "%{::boxen_home}/repo/hiera"
+:hierarchy:
+  - "users/%{::github_login}/nodes/%{::hostname}"
+  - "users/%{::github_login}/nodes/common"
+  - "users/%{::github_login}"
+  - "projects/%{::boxen_project_01}"
+  - "projects/%{::boxen_project_02}"
+  - "projects/%{::boxen_project_03}"
+  - "projects/%{::boxen_project_04}"
+  - "projects/%{::boxen_project_05}"
+  - "projects/%{::boxen_project_06}"
+  - "projects/%{::boxen_project_07}"
+  - "projects/%{::boxen_project_08}"
+  - "projects/%{::boxen_project_09}"
+  - "projects/%{::boxen_project_10}"
+  - "projects/common"
+  - "common"</code></pre>
+</div>
+</div>
+</section>
+
+<section class="slide" id="_tips_roles">
+<h2>Tips: Roles</h2>
+<div class="paragraph"><p>More advanced, but it can be worth borrowing some techniques from Puppet Enterprise</p></div>
+
+<div class="listingblock">
+<div class="title">modules/people/jdigger/applications.pp</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">class people::jdigger::applications ($system_roles = undef) {
+  $_system_roles = hiera_array('people::jdigger::system_roles', [])
+  $roles = $system_roles ? { undef =&gt; $_system_roles, default =&gt; $system_roles}
+
+  include people::jdigger::applications::general
+
+  if member($roles, 'work') {
+    include 'people::jdigger::applications::work'
+  }
+  if member($roles, 'personal') {
+    include 'people::jdigger::applications::personal'
+  }
+}</code></pre>
+</div>
+</div>
+
+<div class="listingblock">
+<div class="title">hiera/users/jdigger/nodes/imac.yaml</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">boxen::security::require_password: false
+people::jdigger::system_roles:
+  - personal</code></pre>
+</div>
+</div>
+
+<div class="listingblock">
+<div class="title">modules/people/jdigger/applications/personal.pp</div>
+<div class="content">
+<pre class="highlight"><code class="ruby language-ruby">class people::jdigger::applications::personal {
+  include 'calibre'
+  include 'steam'
+}</code></pre>
+</div>
+</div>
+</section>
+
+<section class="slide" id="_troubleshooting">
+<h2>Troubleshooting</h2>
+<div class="ulist">
+<ul>
+<li><a href="http://stackoverflow.com/questions/22352838/ruby-gem-install-json-fails-on-mavericks-and-xcode-5-1-unknown-argument-mul">XCode 5.1</a></li>
+<li><a href="https://github.com/boxen/our-boxen/blob/master/docs/faq.md">Read the FAQ</a></li>
+<li><a href="https://github.com/boxen/our-boxen/blob/master/docs/faq.md">Seriously, read the FAQ</a></li>
+<li>confusion: GH user vs GHE user</li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_summary">
+<h2>Summary</h2>
+<div class="ulist">
+<ul>
+<li>Easy to start</li>
+<li>Easy to iterate</li>
+<li>Fast return on investment</li>
+<li>Installation + Configuration</li>
+<li>All the advantages of source control</li>
+<li><span class="small">Call To Action</span> Bring to other puppet platforms!</li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_resources">
+<h2>Resources</h2>
+<div class="ulist">
+<ul>
+<li><a href="https://boxen.github.com/">Boxen Homepage</a></li>
+<li><a href="http://garylarizza.com/blog/2013/02/15/puppet-plus-github-equals-laptop-love/">A good blog entry</a></li>
+<li><a href="http://www.dmuth.org/node/1431/tweaking-boxen-osx">Another (shorter) blog entry</a></li>
+<li><a href="http://docs.puppetlabs.com/learning/">Learning Puppet</a></li>
+<li><a href="https://github.com/jdigger/boxen.git">Jim&#8217;s Boxen</a></li>
+<li><a href="https://webconference.twcable.com/p7oudsr7jp4/">Recording of brown-bag Jim gave at TWC</a></li>
+</ul>
+</div>
+
+<div class="paragraph"><p>Attribution</p></div>
+
+<div class="ulist">
+<ul>
+<li>www.macforensicslab.com for robot</li>
+</ul>
+</div>
+</section>
+
+<section class="slide" id="_thank_you">
+<h2>Thank You!</h2>
+<div class="paragraph"><p>Questions?</p></div>
+</section>
+
+<a class="deck-prev-link" href="#" title="Previous">&#8592;</a>
+<a class="deck-next-link" href="#" title="Next">&#8594;</a>
+<p class="deck-status">
+<span class="deck-status-current"></span>
+/
+<span class="deck-status-total"></span>
+</p>
+<form action="." class="goto-form" method="get">
+<label for="goto-slide">Go to Slide:</label>
+<input id="goto-slide" list="goto-datalist" name="slidenum" type="text">
+<datalist id="goto-data-list"></datalist>
+<input type="submit" value="Go">
+</form>
+<a class="deck-permalink" href="." title="Permalink to this slide">#</a>
+<script src="deck.js/jquery.min.js"></script>
+<script src="deck.js/core/deck.core.js"></script>
+<script src="deck.js/extensions/hash/deck.hash.js"></script>
+<script src="deck.js/extensions/scale/deck.scale.js"></script>
+<script src="deck.js/extensions/goto/deck.goto.js"></script>
+<script src="deck.js/extensions/menu/deck.menu.js"></script>
+<script src="deck.js/extensions/navigation/deck.navigation.js"></script>
+<script src="deck.js/extensions/status/deck.status.js"></script>
+<script>
+  (function($, deck, undefined) {
+    $.deck.defaults.keys['previous'] = [8, 33, 37, 39];
+    $.deck.defaults.keys['next'] = [13, 32, 34, 39];
+  
+    $.extend(true, $[deck].defaults, {
+        countNested: false
+    });
+  
+    $.deck('.slide');
+  })(jQuery, 'deck');
+</script>
+<style>
+  .slide.canvas-image {
+  -moz-background-size: cover;
+  -webkit-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  display: -moz-box;
+  display: -webkit-box;
+  display: -ms-box;
+  display: box;
+  -moz-box-orient: vertical;
+  -webkit-box-orient: vertical;
+  -ms-box-orient: vertical;
+  box-orient: vertical;
+  -moz-box-align: start;
+  -webkit-box-align: start;
+  -ms-box-align: start;
+  box-align: start;
+  -moz-box-pack: start;
+  -webkit-box-pack: start;
+  -ms-box-pack: start;
+  box-pack: start;}
+  
+  .bottom-left {
+    left: 1%;
+    bottom: 20%; }
+  
+  .top-left {
+    left: 1%;
+    top: 20%; }
+  
+  .bottom-right {
+    right: 1%;
+    bottom: 20%; }
+  
+  .top-right {
+    right: 1%;
+    top: 20%; }
+  
+  .center-up {
+    right: 50%;
+    top: 1%;
+  }
+  
+  .center-down {
+    right: 50%;
+    bottom: 1%;
+  }
+  .canvas-image .canvas-caption p {
+    text-align: center;
+    padding-top: 0;
+    padding: 0;
+    -moz-transform: none;
+    -webkit-transform: none;
+    -o-transform: none;
+    -ms-transform: none;
+    transform: none;
+    display: inline;
+    position: absolute;
+    background-color: rgba(0, 0, 0, 0.7);
+    font-weight: bold;
+    font-size: 58px;
+    -webkit-box-shadow: 2px 2px 2px #000;
+    -moz-box-shadow: 2px 2px 2px #000;
+    box-shadow: 2px 2px 2px #000;
+    padding: 1rem;
+    color: white; }
+  kbd.keyseq { color: #555555; }
+  kbd:not(.keyseq) {
+    display: inline-block;
+    color: #222222;
+    font-size: 0.7em;
+    line-height: 1.4;
+    background-color: #F7F7F7;
+    border: 1px solid #ccc;
+    -webkit-border-radius: 3px;
+    border-radius: 3px;
+    -webkit-box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 2px white inset;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2), 0 0 0 2px white inset;
+    margin: -0.15em 0.15em 0 0.15em;
+    padding: 0.2em 0.6em;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  kbd kbd:first-child { margin-left: 0; }
+  kbd kbd:last-child { margin-right: 0; }
+</style>
+</body>
+</html>
