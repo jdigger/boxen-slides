@@ -523,7 +523,7 @@ define sublime_text_2::package($source) {
 [source,ruby]
 .repo/manifests/site.pp (simplified)
 --
-exec {
+Exec {
   group => 'staff',
   user  => $boxen_user,
   path  => [
@@ -731,7 +731,7 @@ Keep it *simple* and secure: You want it to be easily accessible before the rest
 
 * Use the +--noop+ option
 * *Don't install/configure your machine except via Boxen* (this is a culture shift, but worth it)
-* The +--debug+ output has a wealth of information, but can be overwealming
+* The +--debug+ output has a wealth of information, but can be overwhealming
 * Don't forget it's all code and backed by git: use the forking and branching processes you normally would
 * Design your classes using parameters and facts, keeping Hiera in mind
 * Especially if you're creating modules ``for realz'' (or are just suitably paranoid), run in a VM: http://thezinx.com/2013/10/29/create-bootable-dmg-iso-mavericks-app.html[Creating an ISO]
