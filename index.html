@@ -880,7 +880,7 @@ intellij::version: '13.1.2'</code></pre>
 <div class="listingblock">
 <div class="title">repo/manifests/site.pp (simplified)</div>
 <div class="content">
-<pre class="highlight"><code class="ruby language-ruby">exec {
+<pre class="highlight"><code class="ruby language-ruby">Exec {
   group =&gt; 'staff',
   user  =&gt; $boxen_user,
   path  =&gt; [
@@ -1232,7 +1232,7 @@ facts["boxen_user"]     = config.user
 <ul>
 <li>Use the <code>--noop</code> option</li>
 <li><strong>Don&#8217;t install/configure your machine except via Boxen</strong> (this is a culture shift, but worth it)</li>
-<li>The <code>--debug</code> output has a wealth of information, but can be overwealming</li>
+<li>The <code>--debug</code> output has a wealth of information, but can be overwhealming</li>
 <li>Don&#8217;t forget it&#8217;s all code and backed by git: use the forking and branching processes you normally would</li>
 <li>Design your classes using parameters and facts, keeping Hiera in mind</li>
 <li>Especially if you&#8217;re creating modules &#8220;for realz&#8221; (or are just suitably paranoid), run in a VM: <a href="http://thezinx.com/2013/10/29/create-bootable-dmg-iso-mavericks-app.html">Creating an ISO</a></li>
